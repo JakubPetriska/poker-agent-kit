@@ -7,11 +7,6 @@ import acpc_python_client as acpc
 class KuhnRandomAgent(acpc.Agent):
     def __init__(self):
         super().__init__()
-        self.actions = [acpc.ActionType.FOLD, acpc.ActionType.CALL, acpc.ActionType.RAISE]
-        self.action_probabilities = [0] * 3
-        self.action_probabilities[0] = 0.06  # fold probability
-        self.action_probabilities[1] = (1 - self.action_probabilities[0]) * 0.5  # call probability
-        self.action_probabilities[2] = (1 - self.action_probabilities[0]) * 0.5  # raise probability
 
     def on_game_start(self, game):
         pass
@@ -20,35 +15,21 @@ class KuhnRandomAgent(acpc.Agent):
         if not is_acting_player:
             return
 
-        # Create current action probabilities, leave out invalid actions
-        current_probabilities = [0] * 3
-        if self.is_fold_valid():
-            current_probabilities[0] = self.action_probabilities[0]
-        # call is always valid action
-        current_probabilities[1] = self.action_probabilities[1]
-        if self.is_raise_valid():
-            current_probabilities[2] = self.action_probabilities[2]
+        print('%s: %s %s' % (
+            match_state.get_viewing_player(),
+            self.is_fold_valid(),
+            self.is_raise_valid()
+        ))
 
-        # Normalize the probabilities
-        probabilities_sum = sum(current_probabilities)
-        current_probabilities = [p / probabilities_sum for p in current_probabilities]
-
-        # Randomly select one action
-        action_index = -1
-        r = random.random()
-        for i in range(3):
-            if r <= current_probabilities[i]:
-                action_index = i
-            else:
-                r -= current_probabilities[i]
-        action_type = self.actions[action_index]
-        if action_type == acpc.ActionType.RAISE:
-            raise_min = self.get_raise_min()
-            raise_max = self.get_raise_max()
-            raise_size = raise_min + (raise_max - raise_min) * random.random()
-            self.set_next_action(action_type, int(round(raise_size)))
+        # Select between passing (fold or initial call)
+        # or betting (raising or calling a bet)
+        selected_action = random.randrange(2)
+        if selected_action == 0 and self.is_fold_valid():
+            self.set_next_action(acpc.ActionType.FOLD)
+        elif selected_action == 1 and self.is_raise_valid():
+            self.set_next_action(acpc.ActionType.RAISE)
         else:
-            self.set_next_action(action_type)
+            self.set_next_action(acpc.ActionType.CALL)
 
     def on_game_finished(self, game, match_state):
         pass

@@ -11,8 +11,11 @@ fi
 CURRENT_DIR=$(pwd)
 cd ${ACPC_DIR}
 
+TIMESTAMP=$(date +%s)
+
 ./play_match.pl ${CURRENT_DIR}/${LOGS_DIR}/${MATCH_NAME} \
     ${CURRENT_DIR}/../kuhn.limit.2p.game \
-    1 0 \
-    CFR_Agent ${CURRENT_DIR}/kuhn_agent.limit.2p.sh \
-    Random ${CURRENT_DIR}/kuhn_random_agent.limit.2p.sh
+    1000 \
+    ${TIMESTAMP} \
+    Random_1 ${CURRENT_DIR}/kuhn_random_agent.limit.2p.sh \
+    Random_2 ${CURRENT_DIR}/kuhn_random_agent.limit.2p.sh
