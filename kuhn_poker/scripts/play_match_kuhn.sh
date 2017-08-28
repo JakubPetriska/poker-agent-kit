@@ -16,4 +16,3 @@ cd ${ACPC_DIR}
     1 0 \
     CFR_Agent ${CURRENT_DIR}/kuhn_agent.limit.2p.sh \
     Random ${CURRENT_DIR}/kuhn_random_agent.limit.2p.sh
-
