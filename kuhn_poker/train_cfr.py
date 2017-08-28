@@ -22,7 +22,7 @@ class Node:
                 self.strategy[a] /= normalizing_sum
             else:
                 self.strategy[a] = 1.0 / NUM_ACTIONS
-                self.strategy_sum[a] += realization_weight * self.strategy[a]
+            self.strategy_sum[a] += realization_weight * self.strategy[a]
         return self.strategy
 
     def get_average_strategy(self):
@@ -68,7 +68,7 @@ def cfr(cards, history, p0, p1):
         node = nodeMap[info_set]
     else:
         node = Node(info_set)
-        node.infoSet = info_set
+        node.info_set = info_set
         nodeMap[info_set] = node
 
     strategy = node.get_strategy(p0 if player == 0 else p1)
@@ -105,5 +105,5 @@ def train(iterations):
 
 
 if __name__ == "__main__":
-    iterations = 1000
+    iterations = 1000000
     train(iterations)
