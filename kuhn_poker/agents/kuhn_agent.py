@@ -3,15 +3,62 @@ import sys
 
 import acpc_python_client as acpc
 
+ACTIONS = [
+    acpc.ActionType.FOLD,
+    acpc.ActionType.CALL,
+    acpc.ActionType.RAISE
+]
+
+
+def convert_to_strategy_card(card):
+    if card == 43:
+        return 1
+    elif card == 47:
+        return 2
+    elif card == 51:
+        return 3
+    else:
+        raise RuntimeError(
+            'Invalid card: (%s, rank: %s, suit: %s)' % (
+                card,
+                acpc.game_utils.card_rank(card),
+                acpc.game_utils.card_suit(card)))
+
+
+def convert_action_to_str(action):
+    if action == acpc.ActionType.CALL:
+        return 'c'
+    elif action == acpc.ActionType.RAISE:
+        return 'r'
+    else:
+        raise RuntimeError('Invalid action: %s' % action)
+
+
+def select_action(strategy):
+    choice = random.random()
+    probability_sum = 0
+    for i in range(3):
+        action_probability = strategy[i]
+        if action_probability == 0:
+            continue
+        probability_sum += action_probability
+        if choice < probability_sum:
+            return ACTIONS[i]
+    # Return the last action since it could have not been selected due to floating point error
+    return ACTIONS[2]
+
 
 class KuhnAgent(acpc.Agent):
-    def __init__(self):
+    def __init__(self, strategy_file_path):
         super().__init__()
-        self.actions = [acpc.ActionType.FOLD, acpc.ActionType.CALL, acpc.ActionType.RAISE]
-        self.action_probabilities = [0] * 3
-        self.action_probabilities[0] = 0.06  # fold probability
-        self.action_probabilities[1] = (1 - self.action_probabilities[0]) * 0.5  # call probability
-        self.action_probabilities[2] = (1 - self.action_probabilities[0]) * 0.5  # raise probability
+
+        self.strategy = {}
+        with open(strategy_file_path, 'r') as strategy_file:
+            for line in strategy_file:
+                line_split = line.split(':')
+                node_path = line_split[0].strip()
+                action_probabilities = [float(probStr) for probStr in line_split[1].split()]
+                self.strategy[node_path] = action_probabilities
 
     def on_game_start(self, game):
         pass
@@ -20,44 +67,26 @@ class KuhnAgent(acpc.Agent):
         if not is_acting_player:
             return
 
-        # Create current action probabilities, leave out invalid actions
-        current_probabilities = [0] * 3
-        if self.is_fold_valid():
-            current_probabilities[0] = self.action_probabilities[0]
-        # call is always valid action
-        current_probabilities[1] = self.action_probabilities[1]
-        if self.is_raise_valid():
-            current_probabilities[2] = self.action_probabilities[2]
+        state = match_state.get_state()
+        card = state.get_hole_card(0)
+        strategy_card = convert_to_strategy_card(card)
+        num_actions = state.get_num_actions(0)
+        info_set = str(strategy_card)
+        for i in range(num_actions):
+            action = state.get_action_type(0, i)
+            action_str = convert_action_to_str(action)
+            info_set += action_str
 
-        # Normalize the probabilities
-        probabilities_sum = sum(current_probabilities)
-        current_probabilities = [p / probabilities_sum for p in current_probabilities]
-
-        # Randomly select one action
-        action_index = -1
-        r = random.random()
-        for i in range(3):
-            if r <= current_probabilities[i]:
-                action_index = i
-            else:
-                r -= current_probabilities[i]
-        action_type = self.actions[action_index]
-        if action_type == acpc.ActionType.RAISE:
-            raise_min = self.get_raise_min()
-            raise_max = self.get_raise_max()
-            raise_size = raise_min + (raise_max - raise_min) * random.random()
-            self.set_next_action(action_type, int(round(raise_size)))
-        else:
-            self.set_next_action(action_type)
+        self.set_next_action(select_action(self.strategy[info_set]))
 
     def on_game_finished(self, game, match_state):
         pass
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Usage {game_file_path} {dealer_hostname} {dealer_port}")
+    if len(sys.argv) < 5:
+        print("Usage {game_file_path} {strategy_file_path} {dealer_hostname} {dealer_port}")
         sys.exit(1)
 
-    client = acpc.Client(sys.argv[1], sys.argv[2], sys.argv[3])
-    client.play(KuhnAgent())
+    client = acpc.Client(sys.argv[1], sys.argv[3], sys.argv[4])
+    client.play(KuhnAgent(sys.argv[2]))
