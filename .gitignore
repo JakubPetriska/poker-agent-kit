@@ -1,5 +1,6 @@
 # Project specific
 logs
+**/*.strategy
 
 # Ignore whole .idea folder
 .idea
@@ -57,7 +58,6 @@ fabric.properties
 
 
 # Python
-.pyc
 **/*.pyc
 **/__pycache__
 build

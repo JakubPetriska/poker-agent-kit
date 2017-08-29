@@ -38,9 +38,6 @@ class Node:
                 avg_strategy[a] = 1.0 / NUM_ACTIONS
         return avg_strategy
 
-    def __str__(self):
-        return '%s: %s' % (self.info_set, self.get_average_strategy())
-
 
 nodeMap = {}
 
@@ -51,11 +48,11 @@ def cfr(cards, history, p0, p1):
     opponent = 1 - player
 
     if plays > 1:
-        terminal_pass = history[plays - 1] == 'p'
-        double_bet = history[plays - 2:plays] == 'bb'
+        terminal_pass = history[plays - 1] == 'c'
+        double_bet = history[plays - 2:plays] == 'rr'
         is_player_card_higher = cards[player] > cards[opponent]
         if terminal_pass:
-            if history == 'pp':
+            if history == 'cc':
                 return 1 if is_player_card_higher else -1
             else:
                 return 1
@@ -75,7 +72,7 @@ def cfr(cards, history, p0, p1):
     util = [0] * NUM_ACTIONS
     node_util = 0
     for a in range(NUM_ACTIONS):
-        next_history = history + ('p' if a == 0 else 'b')
+        next_history = history + ('c' if a == 0 else 'r')
         if player == 0:
             util[a] = -cfr(cards, next_history, p0 * strategy[a], p1)
         else:
@@ -100,8 +97,15 @@ def train(iterations):
         util += cfr(cards, '', 1, 1)
 
     print('Average game value: %s' % (util / iterations))
-    for key, node in nodeMap.items():
-        print(str(node))
+
+    with open('kuhn.limit.2p.strategy', 'w') as file:
+        for key, node in nodeMap.items():
+            if 'r' in node.info_set:
+                node_strategy = node.get_average_strategy() + [0]
+            else:
+                node_strategy = [0] + node.get_average_strategy()
+            node_strategy_str = ' '.join([str(prob) for prob in node_strategy])
+            file.write('%s: %s\n' % (node.info_set, node_strategy_str))
 
 
 if __name__ == "__main__":
