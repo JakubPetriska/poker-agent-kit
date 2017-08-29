@@ -1,4 +1,8 @@
 import random
+try:
+    from tqdm import tqdm
+except ImportError:
+    print('!!! Install tqdm library for better progress information !!!\n')
 
 NUM_ACTIONS = 2
 
@@ -88,15 +92,19 @@ def cfr(cards, history, p0, p1):
 def train(iterations):
     cards = [1, 2, 3]
     util = 0
-    for i in range(iterations):
+
+    try:
+        iterations_iterable = tqdm(range(iterations))
+    except NameError:
+        iterations_iterable = range(iterations)
+
+    for i in iterations_iterable:
         for card_index_1 in range(len(cards) - 1, -1, -1):
             card_index_2 = random.randint(0, card_index_1)
             tmp = cards[card_index_1]
             cards[card_index_1] = cards[card_index_2]
             cards[card_index_2] = tmp
         util += cfr(cards, '', 1, 1)
-
-    print('Average game value: %s' % (util / iterations))
 
     strategy_file_lines = []
     for key, node in nodeMap.items():
