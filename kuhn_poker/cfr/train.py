@@ -98,14 +98,18 @@ def train(iterations):
 
     print('Average game value: %s' % (util / iterations))
 
+    strategy_file_lines = []
+    for key, node in nodeMap.items():
+        if 'r' in node.info_set:
+            node_strategy = node.get_average_strategy() + [0]
+        else:
+            node_strategy = [0] + node.get_average_strategy()
+        node_strategy_str = ' '.join([str(prob) for prob in node_strategy])
+        strategy_file_lines.append('%s: %s\n' % (node.info_set, node_strategy_str))
+
     with open('kuhn.limit.2p.strategy', 'w') as file:
-        for key, node in nodeMap.items():
-            if 'r' in node.info_set:
-                node_strategy = node.get_average_strategy() + [0]
-            else:
-                node_strategy = [0] + node.get_average_strategy()
-            node_strategy_str = ' '.join([str(prob) for prob in node_strategy])
-            file.write('%s: %s\n' % (node.info_set, node_strategy_str))
+        for line in sorted(strategy_file_lines):
+            file.write(line)
 
 
 if __name__ == "__main__":
