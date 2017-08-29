@@ -15,12 +15,6 @@ class KuhnRandomAgent(acpc.Agent):
         if not is_acting_player:
             return
 
-        print('%s: %s %s' % (
-            match_state.get_viewing_player(),
-            self.is_fold_valid(),
-            self.is_raise_valid()
-        ))
-
         # Select between passing (fold or initial call)
         # or betting (raising or calling a bet)
         selected_action = random.randrange(2)
