@@ -94,6 +94,10 @@ class Cfr:
         util = []
         node_util = [0] * self.player_count
         for a in range(NUM_ACTIONS):
+            next_node = node.children[a]
+            if not next_node:
+                continue
+
             new_occurrence_probabilities = list(occurrence_probabilities)
             new_occurrence_probabilities[node_player] *= strategy[a]
             action_util = self._cfr(
