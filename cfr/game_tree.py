@@ -12,14 +12,14 @@ class Node:
 
 
 class TerminalNode(Node):
-    def __init__(self, parent):
+    def __init__(self, parent, pot_commitment):
         super().__init__(parent)
+        self.pot_commitment = pot_commitment
 
 
 class HoleCardNode(Node):
-    def __init__(self, parent, possible_cards):
+    def __init__(self, parent):
         super().__init__(parent)
-        self.possible_cards = possible_cards
 
 
 class ActionNode(Node):
