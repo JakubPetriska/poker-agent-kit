@@ -3,7 +3,7 @@ import random
 from functools import reduce
 
 from cfr.constants import NUM_ACTIONS
-from cfr.game_tree import HoleCardNode, TerminalNode
+from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode
 
 try:
     from tqdm import tqdm
@@ -17,6 +17,30 @@ class Cfr:
     def __init__(self, player_count, game_tree_root):
         self.player_count = player_count
         self.game_tree_root = game_tree_root
+
+    @staticmethod
+    def _calculate_node_average_strategy(node):
+        num_possible_actions = len(node.children)
+        normalizing_sum = sum(node.strategy_sum)
+        if normalizing_sum > 0:
+            node.average_strategy = [
+                node.strategy_sum[a] / normalizing_sum if a in node.children else 0
+                for a in range(NUM_ACTIONS)
+                ]
+        else:
+            action_probability = 1.0 / num_possible_actions
+            node.average_strategy = [
+                action_probability if a in node.children else 0
+                for a in range(NUM_ACTIONS)
+                ]
+
+    @staticmethod
+    def _calculate_tree_average_strategy(node):
+        if type(node) == ActionNode:
+            Cfr._calculate_node_average_strategy(node)
+        if node.children:
+            for child in node.children.values():
+                Cfr._calculate_tree_average_strategy(child)
 
     def train(self, iterations, show_progress=True):
         if not show_progress:
@@ -36,6 +60,8 @@ class Cfr:
                     player, self.game_tree_root,
                     [1] * self.player_count, [],
                     cards, [False] * self.player_count)
+
+        Cfr._calculate_tree_average_strategy(self.game_tree_root)
 
     def _cfr(self, current_player, node, occurrence_probabilities,
              player_hole_cards, deck_cards, players_folded):

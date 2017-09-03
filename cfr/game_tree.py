@@ -29,3 +29,4 @@ class ActionNode(Node):
         self.regret_sum = [0] * NUM_ACTIONS
         self.strategy = [0] * NUM_ACTIONS
         self.strategy_sum = [0] * NUM_ACTIONS
+        self.average_strategy = None
