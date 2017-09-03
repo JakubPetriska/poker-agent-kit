@@ -23,9 +23,12 @@ def _get_strategy_lines(lines, node, prefix=''):
             _get_strategy_lines(lines, child_node, '%s%s:' % (prefix, str(card)))
     elif type(node) == ActionNode:
         node_strategy_str = ' '.join([str(prob) for prob in node.strategy])
-        lines.append('%s: %s\n' % (prefix, node_strategy_str))
+        lines.append('%s %s\n' % (prefix, node_strategy_str))
+        old_prefix = prefix
+        if old_prefix.endswith(':'):
+            old_prefix = old_prefix[:-1]
         for action, child_node in node.children.items():
-            _get_strategy_lines(lines, child_node, '%s%s:' % (prefix, _action_to_str(action)))
+            _get_strategy_lines(lines, child_node, '%s%s:' % (old_prefix, _action_to_str(action)))
 
 
 def write_strategy(game_tree, output_path):
