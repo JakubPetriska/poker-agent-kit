@@ -19,8 +19,8 @@ def build_game_tree(game):
         third_action_node_call_raise = ActionNode(second_action_node_call, 0)
         second_action_node_call.set_child(2, third_action_node_call_raise)
 
-        third_action_node_call_raise.set_child(0, TerminalNode(second_action_node_call, [1, 2]))
-        third_action_node_call_raise.set_child(1, TerminalNode(second_action_node_call, [2, 2]))
+        third_action_node_call_raise.set_child(0, TerminalNode(third_action_node_call_raise, [1, 2]))
+        third_action_node_call_raise.set_child(1, TerminalNode(third_action_node_call_raise, [2, 2]))
 
         second_action_node_raise = ActionNode(first_action_node, 1)
         first_action_node.set_child(2, second_action_node_raise)
