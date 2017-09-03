@@ -27,4 +27,4 @@ def build_game_tree(game):
 
         second_action_node_raise.set_child(0, TerminalNode(second_action_node_raise, [2, 1]))
         second_action_node_raise.set_child(1, TerminalNode(second_action_node_raise, [2, 2]))
-    return None
+    return root

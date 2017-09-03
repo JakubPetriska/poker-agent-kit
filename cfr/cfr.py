@@ -24,6 +24,7 @@ class Cfr:
         else:
             try:
                 iterations_iterable = tqdm(range(iterations))
+                iterations_iterable.set_description('CFR training')
             except NameError:
                 iterations_iterable = range(iterations)
 
@@ -88,11 +89,14 @@ class Cfr:
             node.strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
             normalizing_sum += node.strategy[a]
 
+        num_possible_actions = len(node.children)
         for a in range(NUM_ACTIONS):
             if normalizing_sum > 0:
                 node.strategy[a] /= normalizing_sum
+            elif a in node.children:
+                node.strategy[a] = 1.0 / num_possible_actions
             else:
-                node.strategy[a] = 1.0 / NUM_ACTIONS
+                node.strategy[a] = 0
             node.strategy_sum[a] += realization_weight * node.strategy[a]
 
     def _cfr_action(self, current_player, node, occurrence_probabilities,
@@ -100,11 +104,10 @@ class Cfr:
         node_player = node.player
         Cfr._update_node_strategy(node, occurrence_probabilities[node_player])
         strategy = node.strategy
-        util = []
+        util = [None] * NUM_ACTIONS
         node_util = [0] * self.player_count
         for a in range(NUM_ACTIONS):
-            next_node = node.children[a]
-            if not next_node:
+            if a not in node.children:
                 continue
 
             new_occurrence_probabilities = list(occurrence_probabilities)
@@ -119,12 +122,14 @@ class Cfr:
             action_util = self._cfr(
                 current_player, node.children[a], new_occurrence_probabilities,
                 player_hole_cards, deck_cards, next_players_folded)
-            util.append(action_util)
+            util[a] = action_util
             for player in range(self.player_count):
                 node_util[player] += strategy[a] * action_util[player]
 
         if node_player == current_player:
             for a in range(NUM_ACTIONS):
+                if not util[a]:
+                    continue
                 regret = util[a][current_player] - node_util[current_player]
 
                 opponent_occurrence_probabilities = occurrence_probabilities[0:player] \

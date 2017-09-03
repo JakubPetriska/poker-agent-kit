@@ -19,29 +19,29 @@ def _action_to_str(action):
 
 def _get_strategy_lines(lines, node, prefix=''):
     if type(node) == HoleCardNode:
-        for card, child_node in node.children.items:
+        for card, child_node in node.children.items():
             _get_strategy_lines(lines, child_node, '%s%s:' % (prefix, str(card)))
     elif type(node) == ActionNode:
         node_strategy_str = ' '.join([str(prob) for prob in node.strategy])
         lines.append('%s: %s\n' % (prefix, node_strategy_str))
-        for action, child_node in node.children.items:
+        for action, child_node in node.children.items():
             _get_strategy_lines(lines, child_node, '%s%s:' % (prefix, _action_to_str(action)))
 
 
 def write_strategy(game_tree, output_path):
-    print('Obtaining strategy entries')
     with tqdm(total=100) as progress:
+        progress.set_description('Obtaining strategy entries')
         strategy_file_lines = []
         _get_strategy_lines(strategy_file_lines, game_tree)
         progress.update(100)
 
-    print('Sorting strategy file')
     with tqdm(total=100) as progress:
+        progress.set_description('Sorting strategy file')
         strategy_file_lines_sorted = sorted(strategy_file_lines)
         progress.update(100)
 
-    print('Writing strategy file')
     with tqdm(total=100) as progress:
+        progress.set_description('Writing strategy file')
         with open(output_path, 'w') as file:
             for line in strategy_file_lines_sorted:
                 file.write(line)
