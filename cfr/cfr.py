@@ -53,23 +53,22 @@ class Cfr:
 
     def _cfr_terminal(self, current_player, node, occurrence_probabilities,
                       player_hole_cards, deck_cards, players_folded):
-        # TODO consider that players folded
-        # num_players_folded = sum(players_folded)
-        # num_players_on_showdown = self.player_count - num_players_folded
-        #
-        # player_utility = list(node.pot_commitment)
-
         hole_cards_count = len(player_hole_cards)
-        hole_cards = []
+        hole_cards = [None] * self.player_count
         for p in range(self.player_count):
             if p == current_player:
-                hole_cards.append(player_hole_cards)
+                hole_cards[p] = player_hole_cards
             else:
                 new_hole_cards = deck_cards[0:hole_cards_count]
                 deck_cards = deck_cards[hole_cards_count:]
-                hole_cards.append(new_hole_cards)
+                hole_cards[p] = new_hole_cards
+
         player_values = [sum(hole_cards[p]) for p in range(self.player_count)]
-        winning_player = max(enumerate(player_values), key=operator.itemgetter(1))[0]
+
+        showdown_player_values = filter(
+            lambda player_val: not players_folded[player_val[0]],
+            enumerate(player_values))
+        winning_player = max(showdown_player_values, key=operator.itemgetter(1))[0]
         winner_prize = sum(node.pot_commitment) - node.pot_commitment[winning_player]
         return [
             winner_prize if p == winning_player else -node.pot_commitment[p]
