@@ -10,8 +10,6 @@ try:
 except ImportError:
     print('!!! Install tqdm library for better progress information !!!\n')
 
-NUM_PLAYERS = 2
-
 
 class Cfr:
     def __init__(self, player_count, game_tree_root):
