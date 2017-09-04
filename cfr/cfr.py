@@ -19,10 +19,10 @@ class Cfr:
         game_tree_builder = GameTreeBuilder(game)
 
         try:
-            with tqdm(total=100) as progress:
+            with tqdm(total=1) as progress:
                 progress.set_description('Building game tree')
                 self.game_tree = game_tree_builder.build_tree()
-                progress.update(100)
+                progress.update(1)
         except NameError:
             self.game_tree = game_tree_builder.build_tree()
 

@@ -31,23 +31,23 @@ def _get_strategy_lines(lines, node, prefix=''):
 
 
 def write_strategy(game_tree, output_path):
-    with tqdm(total=100) as progress:
+    with tqdm(total=1) as progress:
         progress.set_description('Obtaining strategy entries')
         strategy_file_lines = []
         _get_strategy_lines(strategy_file_lines, game_tree)
-        progress.update(100)
+        progress.update(1)
 
-    with tqdm(total=100) as progress:
+    with tqdm(total=1) as progress:
         progress.set_description('Sorting strategy file')
         strategy_file_lines_sorted = sorted(strategy_file_lines)
-        progress.update(100)
+        progress.update(1)
 
-    with tqdm(total=100) as progress:
+    with tqdm(total=1) as progress:
         progress.set_description('Writing strategy file')
         with open(output_path, 'w') as file:
             for line in strategy_file_lines_sorted:
                 file.write(line)
-        progress.update(100)
+        progress.update(1)
 
 
 if __name__ == "__main__":
