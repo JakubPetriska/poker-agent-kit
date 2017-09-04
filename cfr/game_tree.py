@@ -1,6 +1,20 @@
 from cfr.constants import NUM_ACTIONS
 
 
+def _tree_str_rec(root, offset):
+    result = '%s%s\n' % (' ' * offset, root)
+    for key, item in root.children.items():
+        result += _tree_str_rec(item, offset + 1)
+    return result
+
+
+def tree_str(root):
+    result = ''
+    for key, item in root.children.items():
+        result += _tree_str_rec(item, 0)
+    return result
+
+
 class Node:
     def __init__(self, parent):
         super().__init__()
