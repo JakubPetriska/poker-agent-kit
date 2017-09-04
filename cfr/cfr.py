@@ -2,9 +2,9 @@ import operator
 import random
 from functools import reduce
 
-from cfr.build_tree import build_game_tree
+from cfr.build_tree import GameTreeBuilder
 from cfr.constants import NUM_ACTIONS
-from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode
+from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode, tree_str
 
 try:
     from tqdm import tqdm
@@ -15,7 +15,17 @@ except ImportError:
 class Cfr:
     def __init__(self, game):
         self.game = game
-        self.game_tree = build_game_tree(game)
+
+        game_tree_builder = GameTreeBuilder(game)
+
+        try:
+            with tqdm(total=100) as progress:
+                progress.set_description('Building game tree')
+                self.game_tree = game_tree_builder.build_tree()
+                progress.update(100)
+        except NameError:
+            self.game_tree = game_tree_builder.build_tree()
+
         self.player_count = game.get_num_players()
 
     @staticmethod
@@ -153,7 +163,7 @@ class Cfr:
             regret = util[a][node_player] - node_util[node_player]
 
             opponent_reach_probs = reach_probs[0:player] \
-                                                + reach_probs[player + 1:]
+                                   + reach_probs[player + 1:]
             reach_prob = reduce(operator.mul, opponent_reach_probs, 1)
             node.regret_sum[a] += regret * reach_prob
 

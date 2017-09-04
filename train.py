@@ -3,7 +3,6 @@ import sys
 import acpc_python_client as acpc
 from tqdm import tqdm  # TODO make import optional
 
-from cfr.build_tree import build_game_tree
 from cfr.cfr import Cfr
 from cfr.game_tree import HoleCardNode, ActionNode
 
