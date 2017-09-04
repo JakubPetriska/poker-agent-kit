@@ -19,15 +19,17 @@ def _action_to_str(action):
 def _get_strategy_lines(lines, node, prefix=''):
     if type(node) == HoleCardNode:
         for card, child_node in node.children.items():
-            _get_strategy_lines(lines, child_node, '%s%s:' % (prefix, str(card)))
+            new_prefix = prefix
+            if new_prefix and not new_prefix.endswith(':'):
+                new_prefix += ':'
+            new_prefix += '%s:' % card
+            _get_strategy_lines(lines, child_node, new_prefix)
     elif type(node) == ActionNode:
         node_strategy_str = ' '.join([str(prob) for prob in node.average_strategy])
         lines.append('%s %s\n' % (prefix, node_strategy_str))
-        old_prefix = prefix
-        if old_prefix.endswith(':'):
-            old_prefix = old_prefix[:-1]
+
         for action, child_node in node.children.items():
-            _get_strategy_lines(lines, child_node, '%s%s:' % (old_prefix, _action_to_str(action)))
+            _get_strategy_lines(lines, child_node, prefix + _action_to_str(action))
 
 
 def write_strategy(game_tree, output_path):

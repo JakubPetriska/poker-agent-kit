@@ -41,31 +41,35 @@ class StrategyAgent(acpc.Agent):
 
         self.current_info_set = None
 
-        self.strategy = {}
+        strategy = {}
         with open(strategy_file_path, 'r') as strategy_file:
             for line in strategy_file:
-                line_split = line.split(':')
-                node_path = line_split[0].strip()
-                action_probabilities = [float(probStr) for probStr in line_split[1].split()]
-                self.strategy[node_path] = action_probabilities
+                line_split = line.split(' ')
+                strategy[line_split[0]] = [float(probStr) for probStr in line_split[1:4]]
+        self.strategy = strategy
 
     def on_game_start(self, game):
         self.current_info_set = ''
 
     def on_next_turn(self, game, match_state, is_acting_player):
+        state = match_state.get_state()
+
+        if not self.current_info_set:
+            num_hole_cards = game.get_num_hole_cards()
+            for i in range(num_hole_cards):
+                self.current_info_set += '%s:' % state.get_hole_card(i)
+
+        round_index = state.get_round()
+        num_actions = state.get_num_actions(round_index)
+        if num_actions > 0:
+            new_action_type = state.get_action_type(round_index, num_actions - 1)
+            self.current_info_set += '%s' % convert_action_to_str(new_action_type)
+
         if not is_acting_player:
             return
 
-        state = match_state.get_state()
-        card = state.get_hole_card(0)
-        num_actions = state.get_num_actions(0)
-        info_set = str(card)
-        for i in range(num_actions):
-            action = state.get_action_type(0, i)
-            action_str = convert_action_to_str(action)
-            info_set += action_str
-
-        self.set_next_action(select_action(self.strategy[info_set]))
+        strategy = self.strategy[self.current_info_set]
+        self.set_next_action(select_action(strategy))
 
     def on_game_finished(self, game, match_state):
         pass
