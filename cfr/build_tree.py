@@ -3,7 +3,7 @@ import itertools
 
 import acpc_python_client as acpc
 
-from cfr.game_tree import HoleCardNode, ActionNode, TerminalNode, BoardCardNode
+from cfr.game_tree import HoleCardsNode, ActionNode, TerminalNode, BoardCardsNode
 
 
 class GameTreeBuilder:
@@ -40,7 +40,7 @@ class GameTreeBuilder:
     def build_tree(self):
         deck = acpc.game_utils.generate_deck(self.game)
 
-        root = HoleCardNode(None, self.game.get_num_hole_cards())
+        root = HoleCardsNode(None, self.game.get_num_hole_cards())
         num_hole_cards = self.game.get_num_hole_cards()
         hole_card_combinations = itertools.combinations(range(len(deck)), num_hole_cards)
         for hole_cards_indexes in hole_card_combinations:
@@ -49,17 +49,17 @@ class GameTreeBuilder:
             for hole_card_index in hole_cards_indexes:
                 del next_deck[hole_card_index]
             game_state = GameTreeBuilder.GameState(self.game, next_deck)
-            self._generate_board_card_node(root, hole_cards, game_state)
+            self._generate_board_cards_node(root, hole_cards, game_state)
         return root
 
-    def _generate_board_card_node(self, parent, child_key, game_state):
+    def _generate_board_cards_node(self, parent, child_key, game_state):
         rounds_left = game_state.rounds_left
         round_index = self.game.get_num_rounds() - rounds_left
         num_board_cards = self.game.get_num_board_cards(round_index)
         if num_board_cards <= 0:
             self._generate_action_node(parent, child_key, game_state)
         else:
-            new_node = BoardCardNode(parent, num_board_cards)
+            new_node = BoardCardsNode(parent, num_board_cards)
             parent.children[child_key] = new_node
 
             deck = game_state.deck
@@ -92,7 +92,7 @@ class GameTreeBuilder:
                 next_game_state.current_player = \
                     self.game.get_first_player(self.game.get_num_rounds() - rounds_left + 1)
 
-                self._generate_board_card_node(parent, child_key, next_game_state)
+                self._generate_board_cards_node(parent, child_key, next_game_state)
             else:
                 new_node = TerminalNode(parent, pot_commitment)
                 parent.children[child_key] = new_node

@@ -6,7 +6,7 @@ import acpc_python_client as acpc
 
 from cfr.build_tree import GameTreeBuilder
 from cfr.constants import NUM_ACTIONS
-from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode
+from cfr.game_tree import HoleCardsNode, TerminalNode, ActionNode
 
 try:
     from tqdm import tqdm
@@ -89,8 +89,8 @@ class Cfr:
         if node_type == TerminalNode:
             return self._cfr_terminal(
                 nodes, hole_cards, players_folded)
-        elif node_type == HoleCardNode:
-            return self._cfr_hole_card(
+        elif node_type == HoleCardsNode:
+            return self._cfr_hole_cards(
                 nodes, reach_probs,
                 hole_cards, players_folded)
         return self._cfr_action(
@@ -109,7 +109,7 @@ class Cfr:
             winner_prize if p == winning_player else -nodes[0].pot_commitment[p]
             for p in range(self.player_count)]
 
-    def _cfr_hole_card(self, nodes, reach_probs, hole_cards, players_folded):
+    def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, players_folded):
         next_nodes = [node.children[hole_cards[p]]
                       for p, node in enumerate(nodes)]
         self._cfr(next_nodes, reach_probs, hole_cards, players_folded)
