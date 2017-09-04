@@ -1,9 +1,35 @@
+import copy
+
 import acpc_python_client as acpc
 
 from cfr.game_tree import HoleCardNode, ActionNode, TerminalNode
 
 
 class GameTreeBuilder:
+    class GameState:
+        def __init__(self, game):
+            # Game properties
+            self.players_folded = [False] * game.get_num_players()
+            self.pot_commitment = [game.get_blind(p) for p in range(game.get_num_players())]
+
+            # Round properties
+            self.rounds_left = game.get_num_rounds()
+            self.round_raise_count = 0
+            self.players_acted = 0
+            self.current_player = game.get_first_player(0)
+
+        def next_round_state(self):
+            res = copy.deepcopy(self)
+            res.rounds_left -= 1
+            res.round_raise_count = 0
+            res.players_acted = 0
+            return res
+
+        def next_move_state(self):
+            res = copy.deepcopy(self)
+            res.players_acted += 1
+            return res
+
     def __init__(self, game):
         self.game = game
         if game.get_betting_type() != acpc.BettingType.LIMIT:
@@ -18,7 +44,7 @@ class GameTreeBuilder:
 
     def _generate_hole_card_node(self, parent, child_key, hole_cards_left, deck):
         if hole_cards_left == 0:
-            return self._generate_action_nodes(parent, child_key)
+            return self._generate_game_rounds(parent, child_key)
         new_node = HoleCardNode(parent, self.game.get_num_hole_cards() - hole_cards_left)
         if parent and child_key:
             parent.children[child_key] = new_node
@@ -29,13 +55,9 @@ class GameTreeBuilder:
             self._generate_hole_card_node(new_node, hole_card, hole_cards_left - 1, deck[i + 1:])
         return new_node
 
-    def _generate_action_nodes(self, parent, child_key):
-        blinds = [self.game.get_blind(p) for p in range(self.game.get_num_players())]
-        self._generate_action_node(
-            parent, child_key,
-            self.game.get_num_rounds(), 0,
-            0, [False] * self.game.get_num_players(),
-            self.game.get_first_player(0), blinds)
+    def _generate_game_rounds(self, parent, child_key):
+        game_state = GameTreeBuilder.GameState(self.game)
+        self._generate_action_node(parent, child_key, game_state)
 
     @staticmethod
     def _bets_settled(bets, players_folded):
@@ -43,20 +65,21 @@ class GameTreeBuilder:
         non_folded_bets = list(map(lambda bet_enum: bet_enum[1], non_folded_bets))
         return non_folded_bets.count(non_folded_bets[0]) == len(non_folded_bets)
 
-    def _generate_action_node(self, parent, child_key,
-                              rounds_left, round_raise_count,
-                              players_acted, players_folded,
-                              current_player, pot_commitment):
+    def _generate_action_node(self, parent, child_key, game_state):
+        players_folded = game_state.players_folded
+        pot_commitment = game_state.pot_commitment
+        current_player = game_state.current_player
+        rounds_left = game_state.rounds_left
+
         bets_settled = GameTreeBuilder._bets_settled(pot_commitment, players_folded)
-        all_acted = players_acted >= (self.game.get_num_players() - sum(players_folded))
+        all_acted = game_state.players_acted >= (self.game.get_num_players() - sum(players_folded))
         if bets_settled and all_acted:
             if rounds_left > 1:
-                next_round_first_player = \
+                next_game_state = game_state.next_round_state()
+                next_game_state.current_player = \
                     self.game.get_first_player(self.game.get_num_rounds() - rounds_left + 1)
-                self._generate_action_node(
-                    parent, child_key, rounds_left - 1, 0,
-                    0, players_folded,
-                    next_round_first_player, pot_commitment)
+
+                self._generate_action_node(parent, child_key, next_game_state)
             else:
                 new_node = TerminalNode(parent, pot_commitment)
                 parent.children[child_key] = new_node
@@ -71,26 +94,19 @@ class GameTreeBuilder:
         valid_actions = [1]
         if not bets_settled:
             valid_actions.append(0)
-        if round_raise_count < self.game.get_max_raises(round_index):
+        if game_state.round_raise_count < self.game.get_max_raises(round_index):
             valid_actions.append(2)
         for a in valid_actions:
-            next_round_raise_count = round_raise_count
-            next_players_folded = players_folded
-            next_pot_commitment = pot_commitment
+            next_game_state = game_state.next_move_state()
+            next_game_state.current_player = next_player
 
             if a == 0:
-                next_players_folded = list(players_folded)
-                next_players_folded[current_player] = True
+                next_game_state.players_folded[current_player] = True
             elif a == 1:
-                next_pot_commitment = list(pot_commitment)
-                next_pot_commitment[current_player] = max_pot_commitment
+                next_game_state.pot_commitment[current_player] = max_pot_commitment
             elif a == 2:
-                next_round_raise_count += 2
-                next_pot_commitment = list(pot_commitment)
-                next_pot_commitment[current_player] = \
+                next_game_state.round_raise_count += 2
+                next_game_state.pot_commitment[current_player] = \
                     max_pot_commitment + self.game.get_raise_size(round_index)
 
-            self._generate_action_node(
-                new_node, a, rounds_left, next_round_raise_count,
-                players_acted + 1, next_players_folded, next_player,
-                next_pot_commitment)
+            self._generate_action_node(new_node, a, next_game_state)
