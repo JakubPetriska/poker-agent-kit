@@ -11,7 +11,9 @@ ACTIONS = [
 
 
 def convert_action_to_str(action):
-    if action == acpc.ActionType.CALL:
+    if action == acpc.ActionType.FOLD:
+        return 'f'
+    elif action == acpc.ActionType.CALL:
         return 'c'
     elif action == acpc.ActionType.RAISE:
         return 'r'
@@ -33,9 +35,11 @@ def select_action(strategy):
     return ACTIONS[2]
 
 
-class KuhnAgent(acpc.Agent):
+class StrategyAgent(acpc.Agent):
     def __init__(self, strategy_file_path):
         super().__init__()
+
+        self.current_info_set = None
 
         self.strategy = {}
         with open(strategy_file_path, 'r') as strategy_file:
@@ -46,7 +50,7 @@ class KuhnAgent(acpc.Agent):
                 self.strategy[node_path] = action_probabilities
 
     def on_game_start(self, game):
-        pass
+        self.current_info_set = ''
 
     def on_next_turn(self, game, match_state, is_acting_player):
         if not is_acting_player:
@@ -73,4 +77,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     client = acpc.Client(sys.argv[1], sys.argv[3], sys.argv[4])
-    client.play(KuhnAgent(sys.argv[2]))
+    client.play(StrategyAgent(sys.argv[2]))
