@@ -9,5 +9,5 @@ maxRaises = 2 2
 numSuits = 2
 numRanks = 3
 numHoleCards = 1
-numBoardCards = 1 0
+numBoardCards = 0 1
 END GAMEDEF
