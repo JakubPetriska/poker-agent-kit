@@ -6,7 +6,7 @@ import acpc_python_client as acpc
 
 from cfr.build_tree import GameTreeBuilder
 from cfr.constants import NUM_ACTIONS
-from cfr.game_tree import HoleCardsNode, TerminalNode, ActionNode
+from cfr.game_tree import HoleCardsNode, TerminalNode, ActionNode, BoardCardsNode
 
 try:
     from tqdm import tqdm
@@ -69,35 +69,37 @@ class Cfr:
             current_deck = list(deck)
             random.shuffle(current_deck)
 
-            num_hole_cards = self.game.get_num_hole_cards()
-            hole_cards = []
-            for p in range(self.player_count):
-                player_hole_cards = current_deck[:num_hole_cards]
-                hole_cards.append(tuple(sorted(player_hole_cards)))
-                current_deck = current_deck[num_hole_cards:]
-
             self._cfr(
                 [self.game_tree] * self.player_count,
                 [1] * self.player_count,
-                hole_cards,
+                None, [], current_deck,
                 [False] * self.player_count)
 
         Cfr._calculate_tree_average_strategy(self.game_tree)
 
-    def _cfr(self, nodes, reach_probs, hole_cards, players_folded):
+    def _cfr(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
         node_type = type(nodes[0])
         if node_type == TerminalNode:
             return self._cfr_terminal(
-                nodes, hole_cards, players_folded)
+                nodes, hole_cards, board_cards, deck,
+                players_folded)
         elif node_type == HoleCardsNode:
             return self._cfr_hole_cards(
                 nodes, reach_probs,
-                hole_cards, players_folded)
+                hole_cards, board_cards, deck,
+                players_folded)
+        elif node_type == BoardCardsNode:
+            return self._cfr_board_cards(
+                nodes, reach_probs,
+                hole_cards, board_cards, deck,
+                players_folded)
         return self._cfr_action(
             nodes, reach_probs,
-            hole_cards, players_folded)
+            hole_cards, board_cards, deck,
+            players_folded)
 
-    def _cfr_terminal(self, nodes, hole_cards, players_folded):
+    def _cfr_terminal(self, nodes, hole_cards, board_cards, deck, players_folded):
+        # TODO consider board cards and combinations
         player_values = [sum(hole_cards[p]) for p in range(self.player_count)]
 
         showdown_player_values = filter(
@@ -109,10 +111,26 @@ class Cfr:
             winner_prize if p == winning_player else -nodes[0].pot_commitment[p]
             for p in range(self.player_count)]
 
-    def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, players_folded):
-        next_nodes = [node.children[hole_cards[p]]
+    def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
+        num_hole_cards = nodes[0].card_count
+        next_hole_cards = []
+        next_deck = list(deck)
+        for p in range(self.player_count):
+            next_hole_cards.append(tuple(sorted(next_deck[:num_hole_cards])))
+            next_deck = next_deck[num_hole_cards:]
+
+        next_nodes = [node.children[next_hole_cards[p]]
                       for p, node in enumerate(nodes)]
-        self._cfr(next_nodes, reach_probs, hole_cards, players_folded)
+        return self._cfr(next_nodes, reach_probs, next_hole_cards, board_cards, next_deck, players_folded)
+
+    def _cfr_board_cards(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
+        num_board_cards = nodes[0].card_count
+        selected_board_cards = tuple(sorted(deck[:num_board_cards]))
+        next_nodes = [node.children[selected_board_cards]
+                      for p, node in enumerate(nodes)]
+        return self._cfr(next_nodes, reach_probs,
+                         hole_cards, board_cards + [selected_board_cards], deck[num_board_cards:],
+                         players_folded)
 
     @staticmethod
     def _update_node_strategy(node, realization_weight):
@@ -132,7 +150,7 @@ class Cfr:
             node.strategy_sum[a] += realization_weight * node.strategy[a]
 
     def _cfr_action(self, nodes, reach_probs,
-                    hole_cards, players_folded):
+                    hole_cards, board_cards, deck, players_folded):
         node_player = nodes[0].player
         node = nodes[node_player]
         Cfr._update_node_strategy(node, reach_probs[node_player])
@@ -155,7 +173,7 @@ class Cfr:
             action_util = self._cfr(
                 [node.children[a] for node in nodes],
                 next_reach_probs,
-                hole_cards, next_players_folded)
+                hole_cards, board_cards, deck, next_players_folded)
             util[a] = action_util
             for player in range(self.player_count):
                 node_util[player] += strategy[a] * action_util[player]
