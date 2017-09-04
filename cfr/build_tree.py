@@ -1,7 +1,6 @@
 import acpc_python_client as acpc
 
 from cfr.game_tree import HoleCardNode, ActionNode, TerminalNode
-from cfr.utils import generate_deck
 
 
 class GameTreeBuilder:
@@ -13,7 +12,7 @@ class GameTreeBuilder:
             raise AttributeError('Games with board cards not supported yet')
 
     def build_tree(self):
-        deck = generate_deck(self.game)
+        deck = acpc.game_utils.generate_deck(self.game)
         return self._generate_hole_card_node(None, None,
                                              self.game.get_num_hole_cards(), deck)
 

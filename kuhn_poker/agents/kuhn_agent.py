@@ -10,21 +10,6 @@ ACTIONS = [
 ]
 
 
-def convert_to_strategy_card(card):
-    if card == 43:
-        return 1
-    elif card == 47:
-        return 2
-    elif card == 51:
-        return 3
-    else:
-        raise RuntimeError(
-            'Invalid card: (%s, rank: %s, suit: %s)' % (
-                card,
-                acpc.game_utils.card_rank(card),
-                acpc.game_utils.card_suit(card)))
-
-
 def convert_action_to_str(action):
     if action == acpc.ActionType.CALL:
         return 'c'
@@ -69,9 +54,8 @@ class KuhnAgent(acpc.Agent):
 
         state = match_state.get_state()
         card = state.get_hole_card(0)
-        strategy_card = convert_to_strategy_card(card)
         num_actions = state.get_num_actions(0)
-        info_set = str(strategy_card)
+        info_set = str(card)
         for i in range(num_actions):
             action = state.get_action_type(0, i)
             action_str = convert_action_to_str(action)

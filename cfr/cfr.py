@@ -2,9 +2,11 @@ import operator
 import random
 from functools import reduce
 
+import acpc_python_client as acpc
+
 from cfr.build_tree import GameTreeBuilder
 from cfr.constants import NUM_ACTIONS
-from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode, tree_str
+from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode
 
 try:
     from tqdm import tqdm
@@ -62,16 +64,17 @@ class Cfr:
             except NameError:
                 iterations_iterable = range(iterations)
 
+        deck = acpc.game_utils.generate_deck(self.game)
         for i in iterations_iterable:
-            cards = [1, 2, 3]
-            random.shuffle(cards)
+            current_deck = list(deck)
+            random.shuffle(current_deck)
 
             num_hole_cards = self.game.get_num_hole_cards()
             hole_cards = []
             for p in range(self.player_count):
-                player_hole_cards = cards[:num_hole_cards]
+                player_hole_cards = current_deck[:num_hole_cards]
                 hole_cards.append(sorted(player_hole_cards))
-                cards = cards[num_hole_cards:]
+                current_deck = current_deck[num_hole_cards:]
 
             self._cfr(
                 [self.game_tree] * self.player_count,
