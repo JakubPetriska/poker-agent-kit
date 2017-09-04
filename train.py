@@ -56,14 +56,11 @@ if __name__ == "__main__":
         print("Usage {game_file_path} {iterations} {strategy_output_path}")
         sys.exit(1)
 
-    game = acpc.read_game_file(sys.argv[1])
-    game_tree = build_game_tree(game)
-
     iterations = int(sys.argv[2])
-
     output_path = sys.argv[3]
+    game = acpc.read_game_file(sys.argv[1])
 
-    cfr = Cfr(game.get_num_players(), game_tree)
+    cfr = Cfr(game)
     cfr.train(iterations)
 
-    write_strategy(game_tree, output_path)
+    write_strategy(cfr.game_tree, output_path)

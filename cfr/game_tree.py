@@ -39,8 +39,9 @@ class TerminalNode(Node):
 
 
 class HoleCardNode(Node):
-    def __init__(self, parent):
+    def __init__(self, parent, card_index):
         super().__init__(parent)
+        self.card_index = card_index
 
 
 class ActionNode(Node):

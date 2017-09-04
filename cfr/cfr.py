@@ -2,6 +2,7 @@ import operator
 import random
 from functools import reduce
 
+from cfr.build_tree import build_game_tree
 from cfr.constants import NUM_ACTIONS
 from cfr.game_tree import HoleCardNode, TerminalNode, ActionNode
 
@@ -12,9 +13,10 @@ except ImportError:
 
 
 class Cfr:
-    def __init__(self, player_count, game_tree_root):
-        self.player_count = player_count
-        self.game_tree_root = game_tree_root
+    def __init__(self, game):
+        self.game = game
+        self.game_tree = build_game_tree(game)
+        self.player_count = game.get_num_players()
 
     @staticmethod
     def _calculate_node_average_strategy(node):
@@ -51,59 +53,54 @@ class Cfr:
                 iterations_iterable = range(iterations)
 
         for i in iterations_iterable:
-            for player in range(self.player_count):
-                cards = [1, 2, 3]
-                random.shuffle(cards)
-                self._cfr(
-                    player, self.game_tree_root,
-                    [1] * self.player_count, [],
-                    cards, [False] * self.player_count)
+            cards = [1, 2, 3]
+            random.shuffle(cards)
 
-        Cfr._calculate_tree_average_strategy(self.game_tree_root)
+            num_hole_cards = self.game.get_num_hole_cards()
+            hole_cards = []
+            for p in range(self.player_count):
+                player_hole_cards = cards[:num_hole_cards]
+                hole_cards.append(sorted(player_hole_cards))
+                cards = cards[num_hole_cards:]
 
-    def _cfr(self, current_player, node, occurrence_probabilities,
-             player_hole_cards, deck_cards, players_folded):
-        if type(node) == TerminalNode:
+            self._cfr(
+                [self.game_tree] * self.player_count,
+                [1] * self.player_count,
+                hole_cards,
+                [False] * self.player_count)
+
+        Cfr._calculate_tree_average_strategy(self.game_tree)
+
+    def _cfr(self, nodes, occurrence_probabilities, hole_cards, players_folded):
+        node_type = type(nodes[0])
+        if node_type == TerminalNode:
             return self._cfr_terminal(
-                current_player, node, occurrence_probabilities,
-                player_hole_cards, deck_cards, players_folded)
-        elif type(node) == HoleCardNode:
+                nodes, occurrence_probabilities,
+                hole_cards, players_folded)
+        elif node_type == HoleCardNode:
             return self._cfr_hole_card(
-                current_player, node, occurrence_probabilities,
-                player_hole_cards, deck_cards, players_folded)
+                nodes, occurrence_probabilities,
+                hole_cards, players_folded)
         return self._cfr_action(
-            current_player, node, occurrence_probabilities,
-            player_hole_cards, deck_cards, players_folded)
+            nodes, occurrence_probabilities,
+            hole_cards, players_folded)
 
-    def _cfr_terminal(self, current_player, node, occurrence_probabilities,
-                      player_hole_cards, deck_cards, players_folded):
-        hole_cards_count = len(player_hole_cards)
-        hole_cards = [None] * self.player_count
-        for p in range(self.player_count):
-            if p == current_player:
-                hole_cards[p] = player_hole_cards
-            else:
-                new_hole_cards = deck_cards[0:hole_cards_count]
-                deck_cards = deck_cards[hole_cards_count:]
-                hole_cards[p] = new_hole_cards
-
+    def _cfr_terminal(self, nodes, occurrence_probabilities, hole_cards, players_folded):
         player_values = [sum(hole_cards[p]) for p in range(self.player_count)]
 
         showdown_player_values = filter(
             lambda player_val: not players_folded[player_val[0]],
             enumerate(player_values))
         winning_player = max(showdown_player_values, key=operator.itemgetter(1))[0]
-        winner_prize = sum(node.pot_commitment) - node.pot_commitment[winning_player]
+        winner_prize = sum(nodes[0].pot_commitment) - nodes[0].pot_commitment[winning_player]
         return [
-            winner_prize if p == winning_player else -node.pot_commitment[p]
+            winner_prize if p == winning_player else -nodes[0].pot_commitment[p]
             for p in range(self.player_count)]
 
-    def _cfr_hole_card(self, current_player, node, occurrence_probabilities,
-                       player_hole_cards, deck_cards, players_folded):
-        hole_card = deck_cards[0]
-        player_hole_cards.append(hole_card)
-        self._cfr(current_player, node.children[hole_card], occurrence_probabilities,
-                  player_hole_cards, deck_cards[1:], players_folded)
+    def _cfr_hole_card(self, nodes, occurrence_probabilities, hole_cards, players_folded):
+        next_nodes = [node.children[hole_cards[p][node.card_index]]
+                      for p, node in enumerate(nodes)]
+        self._cfr(next_nodes, occurrence_probabilities, hole_cards, players_folded)
 
     @staticmethod
     def _update_node_strategy(node, realization_weight):
@@ -122,9 +119,10 @@ class Cfr:
                 node.strategy[a] = 0
             node.strategy_sum[a] += realization_weight * node.strategy[a]
 
-    def _cfr_action(self, current_player, node, occurrence_probabilities,
-                    player_hole_cards, deck_cards, players_folded):
-        node_player = node.player
+    def _cfr_action(self, nodes, occurrence_probabilities,
+                    hole_cards, players_folded):
+        node_player = nodes[0].player
+        node = nodes[node_player]
         Cfr._update_node_strategy(node, occurrence_probabilities[node_player])
         strategy = node.strategy
         util = [None] * NUM_ACTIONS
@@ -143,21 +141,21 @@ class Cfr:
                 next_players_folded = players_folded
 
             action_util = self._cfr(
-                current_player, node.children[a], new_occurrence_probabilities,
-                player_hole_cards, deck_cards, next_players_folded)
+                [node.children[a] for node in nodes],
+                new_occurrence_probabilities,
+                hole_cards, next_players_folded)
             util[a] = action_util
             for player in range(self.player_count):
                 node_util[player] += strategy[a] * action_util[player]
 
-        if node_player == current_player:
-            for a in range(NUM_ACTIONS):
-                if not util[a]:
-                    continue
-                regret = util[a][current_player] - node_util[current_player]
+        for a in range(NUM_ACTIONS):
+            if not util[a]:
+                continue
+            regret = util[a][node_player] - node_util[node_player]
 
-                opponent_occurrence_probabilities = occurrence_probabilities[0:player] \
-                                                    + occurrence_probabilities[player + 1:]
-                occurrence_probability = reduce(operator.mul, opponent_occurrence_probabilities, 1)
-                node.regret_sum[a] += regret * occurrence_probability
+            opponent_occurrence_probabilities = occurrence_probabilities[0:player] \
+                                                + occurrence_probabilities[player + 1:]
+            occurrence_probability = reduce(operator.mul, opponent_occurrence_probabilities, 1)
+            node.regret_sum[a] += regret * occurrence_probability
 
         return node_util

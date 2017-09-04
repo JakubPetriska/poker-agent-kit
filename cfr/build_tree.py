@@ -6,7 +6,7 @@ def build_game_tree(game):
         raise AttributeError('Only games with 2 players supported')
 
     # TODO obey the game, this is just hardcoded Kuhn tree for 2 players
-    root = HoleCardNode(None)
+    root = HoleCardNode(None, 0)
     for card in range(1, 4):
         first_action_node = ActionNode(root, 0)
         root.set_child(card, first_action_node)
