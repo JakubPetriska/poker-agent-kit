@@ -1,16 +1,18 @@
 import copy
+import itertools
 
 import acpc_python_client as acpc
 
-from cfr.game_tree import HoleCardNode, ActionNode, TerminalNode
+from cfr.game_tree import HoleCardNode, ActionNode, TerminalNode, BoardCardNode
 
 
 class GameTreeBuilder:
     class GameState:
-        def __init__(self, game):
+        def __init__(self, game, deck):
             # Game properties
             self.players_folded = [False] * game.get_num_players()
             self.pot_commitment = [game.get_blind(p) for p in range(game.get_num_players())]
+            self.deck = deck
 
             # Round properties
             self.rounds_left = game.get_num_rounds()
@@ -34,8 +36,6 @@ class GameTreeBuilder:
         self.game = game
         if game.get_betting_type() != acpc.BettingType.LIMIT:
             raise AttributeError('No limit betting games not supported')
-        if game.get_total_num_board_cards(game.get_num_rounds() - 1) > 0:
-            raise AttributeError('Games with board cards not supported yet')
 
     def build_tree(self):
         deck = acpc.game_utils.generate_deck(self.game)
@@ -44,7 +44,7 @@ class GameTreeBuilder:
 
     def _generate_hole_card_node(self, parent, child_key, hole_cards_left, deck):
         if hole_cards_left == 0:
-            return self._generate_game_rounds(parent, child_key)
+            return self._generate_game_rounds(parent, child_key, deck)
         new_node = HoleCardNode(parent, self.game.get_num_hole_cards() - hole_cards_left)
         if parent and child_key:
             parent.children[child_key] = new_node
@@ -55,9 +55,26 @@ class GameTreeBuilder:
             self._generate_hole_card_node(new_node, hole_card, hole_cards_left - 1, deck[i + 1:])
         return new_node
 
-    def _generate_game_rounds(self, parent, child_key):
-        game_state = GameTreeBuilder.GameState(self.game)
-        self._generate_action_node(parent, child_key, game_state)
+    def _generate_game_rounds(self, parent, child_key, deck):
+        game_state = GameTreeBuilder.GameState(self.game, deck)
+        self._generate_board_card_node(parent, child_key, game_state)
+
+    def _generate_board_card_node(self, parent, child_key, game_state):
+        rounds_left = game_state.rounds_left
+        round_index = self.game.get_num_rounds() - rounds_left
+        num_board_cards = self.game.get_num_board_cards(round_index)
+        if num_board_cards <= 0:
+            self._generate_action_node(parent, child_key, game_state)
+        else:
+            new_node = BoardCardNode(parent, num_board_cards)
+            parent.children[child_key] = new_node
+
+            deck = game_state.deck
+            board_card_combinations = itertools.combinations(range(len(deck)), num_board_cards)
+
+            for board_cards_idxs in board_card_combinations:
+                board_cards = tuple(map(lambda i: deck[i], board_cards_idxs))
+                self._generate_action_node(new_node, board_cards, game_state)
 
     @staticmethod
     def _bets_settled(bets, players_folded):
@@ -79,7 +96,7 @@ class GameTreeBuilder:
                 next_game_state.current_player = \
                     self.game.get_first_player(self.game.get_num_rounds() - rounds_left + 1)
 
-                self._generate_action_node(parent, child_key, next_game_state)
+                self._generate_board_card_node(parent, child_key, next_game_state)
             else:
                 new_node = TerminalNode(parent, pot_commitment)
                 parent.children[child_key] = new_node
