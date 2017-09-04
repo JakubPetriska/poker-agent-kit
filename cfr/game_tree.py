@@ -33,8 +33,8 @@ class Node:
             raise RuntimeError('Parent does have this node as a child')
         child_key = parents_children[0][0]
         parent_type = type(self.parent)
-        if parent_type == HoleCardNode:
-            child_key = str(child_key) + ':'
+        if parent_type == HoleCardNode or parent_type == BoardCardNode:
+            child_key = ':'.join([str(card) for card in child_key]) + ':'
             if parent_str and not parent_str.endswith(':'):
                 child_key = ':' + child_key
         elif parent_type == ActionNode:
@@ -44,10 +44,6 @@ class Node:
                 child_key = 'c'
             elif child_key == 2:
                 child_key = 'r'
-        elif parent_type == BoardCardNode:
-            child_key = ':'.join([str(card) for card in child_key]) + ':'
-            if parent_str and not parent_str.endswith(':'):
-                child_key = ':' + child_key
         return parent_str + child_key
 
 
@@ -58,9 +54,9 @@ class TerminalNode(Node):
 
 
 class HoleCardNode(Node):
-    def __init__(self, parent, card_index):
+    def __init__(self, parent, card_count):
         super().__init__(parent)
-        self.card_index = card_index
+        self.card_count = card_count
 
 
 class BoardCardNode(Node):

@@ -39,25 +39,18 @@ class GameTreeBuilder:
 
     def build_tree(self):
         deck = acpc.game_utils.generate_deck(self.game)
-        return self._generate_hole_card_node(None, None,
-                                             self.game.get_num_hole_cards(), deck)
 
-    def _generate_hole_card_node(self, parent, child_key, hole_cards_left, deck):
-        if hole_cards_left == 0:
-            return self._generate_game_rounds(parent, child_key, deck)
-        new_node = HoleCardNode(parent, self.game.get_num_hole_cards() - hole_cards_left)
-        if parent and child_key:
-            parent.children[child_key] = new_node
-        deck_offset = -hole_cards_left + 1
-        if deck_offset == 0:
-            deck_offset = len(deck)
-        for i, hole_card in enumerate(deck[:deck_offset]):
-            self._generate_hole_card_node(new_node, hole_card, hole_cards_left - 1, deck[i + 1:])
-        return new_node
-
-    def _generate_game_rounds(self, parent, child_key, deck):
-        game_state = GameTreeBuilder.GameState(self.game, deck)
-        self._generate_board_card_node(parent, child_key, game_state)
+        root = HoleCardNode(None, self.game.get_num_hole_cards())
+        num_hole_cards = self.game.get_num_hole_cards()
+        hole_card_combinations = itertools.combinations(range(len(deck)), num_hole_cards)
+        for hole_cards_indexes in hole_card_combinations:
+            hole_cards = tuple(map(lambda i: deck[i], hole_cards_indexes))
+            next_deck = list(deck)
+            for hole_card_index in hole_cards_indexes:
+                del next_deck[hole_card_index]
+            game_state = GameTreeBuilder.GameState(self.game, next_deck)
+            self._generate_board_card_node(root, hole_cards, game_state)
+        return root
 
     def _generate_board_card_node(self, parent, child_key, game_state):
         rounds_left = game_state.rounds_left
@@ -73,8 +66,11 @@ class GameTreeBuilder:
             board_card_combinations = itertools.combinations(range(len(deck)), num_board_cards)
 
             for board_cards_idxs in board_card_combinations:
+                next_game_state = copy.deepcopy(game_state)
+                for board_card_index in board_cards_idxs:
+                    del next_game_state.deck[board_card_index]
                 board_cards = tuple(map(lambda i: deck[i], board_cards_idxs))
-                self._generate_action_node(new_node, board_cards, game_state)
+                self._generate_action_node(new_node, board_cards, next_game_state)
 
     @staticmethod
     def _bets_settled(bets, players_folded):

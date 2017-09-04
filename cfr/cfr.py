@@ -73,7 +73,7 @@ class Cfr:
             hole_cards = []
             for p in range(self.player_count):
                 player_hole_cards = current_deck[:num_hole_cards]
-                hole_cards.append(sorted(player_hole_cards))
+                hole_cards.append(tuple(sorted(player_hole_cards)))
                 current_deck = current_deck[num_hole_cards:]
 
             self._cfr(
@@ -110,7 +110,7 @@ class Cfr:
             for p in range(self.player_count)]
 
     def _cfr_hole_card(self, nodes, reach_probs, hole_cards, players_folded):
-        next_nodes = [node.children[hole_cards[p][node.card_index]]
+        next_nodes = [node.children[hole_cards[p]]
                       for p, node in enumerate(nodes)]
         self._cfr(next_nodes, reach_probs, hole_cards, players_folded)
 
