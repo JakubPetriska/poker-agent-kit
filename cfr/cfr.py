@@ -12,7 +12,7 @@ from cfr.hand_evaluation import get_winners
 try:
     from tqdm import tqdm
 except ImportError:
-    print('!!! Install tqdm library for better progress information !!!\n')
+    pass
 
 
 class Cfr:

@@ -1,7 +1,11 @@
 import sys
 
 import acpc_python_client as acpc
-from tqdm import tqdm  # TODO make import optional
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    print('!!! Install tqdm library for better progress information !!!\n')
 
 from cfr.cfr import Cfr
 from cfr.game_tree import HoleCardsNode, ActionNode, BoardCardsNode
@@ -33,25 +37,40 @@ def _get_strategy_lines(lines, node, prefix=''):
             _get_strategy_lines(lines, child_node, prefix + _action_to_str(action))
 
 
-def write_strategy(game_tree, iterations, output_path):
-    with tqdm(total=1) as progress:
-        progress.set_description('Obtaining strategy entries')
-        strategy_file_lines = []
+def _write_to_output_file(output_path, lines):
+    with open(output_path, 'w') as file:
+        for line in lines:
+            file.write(line)
+
+
+def _write_strategy(game_tree, iterations, output_path):
+    strategy_file_lines = []
+
+    try:
+        with tqdm(total=1) as progress:
+            progress.set_description('Obtaining strategy entries')
+            _get_strategy_lines(strategy_file_lines, game_tree)
+            progress.update(1)
+    except NameError:
         _get_strategy_lines(strategy_file_lines, game_tree)
-        progress.update(1)
 
-    with tqdm(total=1) as progress:
-        progress.set_description('Sorting strategy file')
+    try:
+        with tqdm(total=1) as progress:
+            progress.set_description('Sorting strategy file')
+            strategy_file_lines_sorted = sorted(strategy_file_lines)
+            progress.update(1)
+    except NameError:
         strategy_file_lines_sorted = sorted(strategy_file_lines)
-        progress.update(1)
 
-    with tqdm(total=1) as progress:
-        progress.set_description('Writing strategy file')
-        with open(output_path, 'w') as file:
-            file.write('#  Training iterations: %s\n' % iterations)
-            for line in strategy_file_lines_sorted:
-                file.write(line)
-        progress.update(1)
+    strategy_file_lines_sorted = ['#  Training iterations: %s\n' % iterations] + strategy_file_lines_sorted
+
+    try:
+        with tqdm(total=1) as progress:
+            progress.set_description('Writing strategy file')
+            _write_to_output_file(output_path, strategy_file_lines_sorted)
+            progress.update(1)
+    except NameError:
+        _write_to_output_file(output_path, strategy_file_lines_sorted)
 
 
 if __name__ == "__main__":
@@ -66,4 +85,4 @@ if __name__ == "__main__":
     cfr = Cfr(game)
     cfr.train(iterations)
 
-    write_strategy(cfr.game_tree, iterations, output_path)
+    _write_strategy(cfr.game_tree, iterations, output_path)
