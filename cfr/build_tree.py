@@ -79,15 +79,16 @@ class GameTreeBuilder:
         return non_folded_bets.count(non_folded_bets[0]) == len(non_folded_bets)
 
     def _generate_action_node(self, parent, child_key, game_state):
+        player_count = self.game.get_num_players()
         players_folded = game_state.players_folded
         pot_commitment = game_state.pot_commitment
         current_player = game_state.current_player
         rounds_left = game_state.rounds_left
 
         bets_settled = GameTreeBuilder._bets_settled(pot_commitment, players_folded)
-        all_acted = game_state.players_acted >= (self.game.get_num_players() - sum(players_folded))
+        all_acted = game_state.players_acted >= (player_count - sum(players_folded))
         if bets_settled and all_acted:
-            if rounds_left > 1:
+            if rounds_left > 1 and sum(players_folded) < player_count - 1:
                 next_game_state = game_state.next_round_state()
                 next_game_state.current_player = \
                     self.game.get_first_player(self.game.get_num_rounds() - rounds_left + 1)
@@ -118,7 +119,7 @@ class GameTreeBuilder:
             elif a == 1:
                 next_game_state.pot_commitment[current_player] = max_pot_commitment
             elif a == 2:
-                next_game_state.round_raise_count += 2
+                next_game_state.round_raise_count += 1
                 next_game_state.pot_commitment[current_player] = \
                     max_pot_commitment + self.game.get_raise_size(round_index)
 
