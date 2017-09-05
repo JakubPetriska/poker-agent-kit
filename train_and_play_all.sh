@@ -11,6 +11,6 @@ for index in ${!GAMES[@]}; do
     "./games/${GAMES[index]}/${GAMES[index]}.strategy"
 
   for i in $(seq 1 ${GAME_PLAYS}); do
-    ./play_match.sh "./games/${GAMES[index]}"
+    play_against_random.sh "./games/${GAMES[index]}"
   done
 done

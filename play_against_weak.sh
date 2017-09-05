@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" != 1 ]; then
-  echo 'Usage: ./play_match.sh {game_dir}'
+  echo 'Usage: ./play_against_random.sh {game_dir}'
   exit 1
 fi
 
@@ -18,7 +18,7 @@ NUM_RANDOM_PLAYERS=$((${NUM_PLAYERS} - 1))
 PLAYERS=""
 for i in `seq 1 ${NUM_RANDOM_PLAYERS}`;
 do
-  PLAYERS="${PLAYERS} Random_${i} "${GAME_DIR_PATH}/agent_random.${GAME_NAME}.sh""
+  PLAYERS="${PLAYERS} CFR_trained_weak_${i} "${GAME_DIR_PATH}/agent_trained_weak.${GAME_NAME}.sh""
 done
 
 LOGS_DIR="${SCRIPT_DIR}/logs"
