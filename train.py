@@ -4,7 +4,7 @@ import acpc_python_client as acpc
 from tqdm import tqdm  # TODO make import optional
 
 from cfr.cfr import Cfr
-from cfr.game_tree import HoleCardsNode, ActionNode
+from cfr.game_tree import HoleCardsNode, ActionNode, BoardCardsNode
 
 
 def _action_to_str(action):
@@ -17,14 +17,15 @@ def _action_to_str(action):
 
 
 def _get_strategy_lines(lines, node, prefix=''):
-    if type(node) == HoleCardsNode:
-        for card, child_node in node.children.items():
+    node_type = type(node)
+    if node_type == HoleCardsNode or node_type == BoardCardsNode:
+        for key, child_node in node.children.items():
             new_prefix = prefix
             if new_prefix and not new_prefix.endswith(':'):
                 new_prefix += ':'
-            new_prefix += '%s:' % card
+            new_prefix += ':'.join([str(card) for card in key]) + ':'
             _get_strategy_lines(lines, child_node, new_prefix)
-    elif type(node) == ActionNode:
+    elif node_type == ActionNode:
         node_strategy_str = ' '.join([str(prob) for prob in node.average_strategy])
         lines.append('%s %s\n' % (prefix, node_strategy_str))
 
