@@ -33,7 +33,7 @@ def _get_strategy_lines(lines, node, prefix=''):
             _get_strategy_lines(lines, child_node, prefix + _action_to_str(action))
 
 
-def write_strategy(game_tree, output_path):
+def write_strategy(game_tree, iterations, output_path):
     with tqdm(total=1) as progress:
         progress.set_description('Obtaining strategy entries')
         strategy_file_lines = []
@@ -48,6 +48,7 @@ def write_strategy(game_tree, output_path):
     with tqdm(total=1) as progress:
         progress.set_description('Writing strategy file')
         with open(output_path, 'w') as file:
+            file.write('#  Training iterations: %s\n' % iterations)
             for line in strategy_file_lines_sorted:
                 file.write(line)
         progress.update(1)
@@ -65,4 +66,4 @@ if __name__ == "__main__":
     cfr = Cfr(game)
     cfr.train(iterations)
 
-    write_strategy(cfr.game_tree, output_path)
+    write_strategy(cfr.game_tree, iterations, output_path)

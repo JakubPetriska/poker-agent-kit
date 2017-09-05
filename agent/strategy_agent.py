@@ -44,6 +44,8 @@ class StrategyAgent(acpc.Agent):
         strategy = {}
         with open(strategy_file_path, 'r') as strategy_file:
             for line in strategy_file:
+                if not line.strip() or line.strip().startswith('#'):
+                    continue
                 line_split = line.split(' ')
                 strategy[line_split[0]] = [float(probStr) for probStr in line_split[1:4]]
         self.strategy = strategy
