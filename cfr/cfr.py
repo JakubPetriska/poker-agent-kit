@@ -183,8 +183,7 @@ class Cfr:
                 continue
             regret = util[a][node_player] - node_util[node_player]
 
-            opponent_reach_probs = reach_probs[0:player] \
-                                   + reach_probs[player + 1:]
+            opponent_reach_probs = reach_probs[0:node_player] + reach_probs[node_player + 1:]
             reach_prob = reduce(operator.mul, opponent_reach_probs, 1)
             node.regret_sum[a] += regret * reach_prob
 
