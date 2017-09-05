@@ -35,11 +35,31 @@ def select_action(strategy):
     return ACTIONS[2]
 
 
+def _get_info_set(game, match_state):
+    state = match_state.get_state()
+    info_set = ''
+
+    num_hole_cards = game.get_num_hole_cards()
+    info_set += '%s:' % ':'.join([str(state.get_hole_card(i)) for i in range(num_hole_cards)])
+
+    total_board_cards_count = 0
+    for round_index in range(state.get_round() + 1):
+        new_total_board_cards_count = game.get_total_num_board_cards(round_index)
+        if new_total_board_cards_count > total_board_cards_count:
+            info_set += ':%s:' % ':'.join(
+                [str(state.get_board_card(i))
+                 for i in range(total_board_cards_count, new_total_board_cards_count)])
+            total_board_cards_count = new_total_board_cards_count
+
+        info_set += ''.join(
+            [convert_action_to_str(state.get_action_type(round_index, action_index))
+             for action_index in range(state.get_num_actions(round_index))])
+    return info_set
+
+
 class StrategyAgent(acpc.Agent):
     def __init__(self, strategy_file_path):
         super().__init__()
-
-        self.current_info_set = None
 
         strategy = {}
         with open(strategy_file_path, 'r') as strategy_file:
@@ -51,27 +71,16 @@ class StrategyAgent(acpc.Agent):
         self.strategy = strategy
 
     def on_game_start(self, game):
-        self.current_info_set = ''
+        pass
 
     def on_next_turn(self, game, match_state, is_acting_player):
-        state = match_state.get_state()
-
-        if not self.current_info_set:
-            num_hole_cards = game.get_num_hole_cards()
-            for i in range(num_hole_cards):
-                self.current_info_set += '%s:' % state.get_hole_card(i)
-
-        round_index = state.get_round()
-        num_actions = state.get_num_actions(round_index)
-        if num_actions > 0:
-            new_action_type = state.get_action_type(round_index, num_actions - 1)
-            self.current_info_set += '%s' % convert_action_to_str(new_action_type)
-
         if not is_acting_player:
             return
 
-        strategy = self.strategy[self.current_info_set]
-        self.set_next_action(select_action(strategy))
+        info_set = _get_info_set(game, match_state)
+        node_strategy = self.strategy[info_set]
+        selected_action = select_action(node_strategy)
+        self.set_next_action(selected_action)
 
     def on_game_finished(self, game, match_state):
         pass
