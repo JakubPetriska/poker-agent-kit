@@ -7,6 +7,7 @@ import acpc_python_client as acpc
 from cfr.build_tree import GameTreeBuilder
 from cfr.constants import NUM_ACTIONS
 from cfr.game_tree import HoleCardsNode, TerminalNode, ActionNode, BoardCardsNode
+from cfr.hand_evaluation import get_winners
 
 try:
     from tqdm import tqdm
@@ -99,17 +100,16 @@ class Cfr:
             players_folded)
 
     def _cfr_terminal(self, nodes, hole_cards, board_cards, deck, players_folded):
-        # TODO consider board cards and combinations
-        player_values = [sum(hole_cards[p]) for p in range(self.player_count)]
-
-        showdown_player_values = filter(
-            lambda player_val: not players_folded[player_val[0]],
-            enumerate(player_values))
-        winning_player = max(showdown_player_values, key=operator.itemgetter(1))[0]
-        winner_prize = sum(nodes[0].pot_commitment) - nodes[0].pot_commitment[winning_player]
-        return [
-            winner_prize if p == winning_player else -nodes[0].pot_commitment[p]
-            for p in range(self.player_count)]
+        pot_commitment = nodes[0].pot_commitment
+        flattened_board_cards = reduce(
+            lambda res, cards: res + list(cards), board_cards, [])
+        player_cards = [(list(hole_cards[p]) + flattened_board_cards) if not players_folded[p] else None
+                        for p in range(self.player_count)]
+        winners = get_winners(player_cards)
+        winner_count = len(winners)
+        value_per_winner = sum(pot_commitment) / winner_count
+        return [value_per_winner - pot_commitment[p] if p in winners else -pot_commitment[p]
+                for p in range(self.player_count)]
 
     def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
         num_hole_cards = nodes[0].card_count
