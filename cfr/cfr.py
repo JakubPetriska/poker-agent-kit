@@ -39,13 +39,13 @@ class Cfr:
             node.average_strategy = [
                 node.strategy_sum[a] / normalizing_sum if a in node.children else 0
                 for a in range(NUM_ACTIONS)
-                ]
+            ]
         else:
             action_probability = 1.0 / num_possible_actions
             node.average_strategy = [
                 action_probability if a in node.children else 0
                 for a in range(NUM_ACTIONS)
-                ]
+            ]
 
     @staticmethod
     def _calculate_tree_average_strategy(node):
@@ -100,16 +100,23 @@ class Cfr:
             players_folded)
 
     def _cfr_terminal(self, nodes, hole_cards, board_cards, deck, players_folded):
+        player_count = self.player_count
         pot_commitment = nodes[0].pot_commitment
+
+        if sum(players_folded) == player_count - 1:
+            prize = sum(pot_commitment)
+            return [-pot_commitment[player] if players_folded[player] else prize - pot_commitment[player]
+                    for player in range(player_count)]
+
         flattened_board_cards = reduce(
             lambda res, cards: res + list(cards), board_cards, [])
         player_cards = [(list(hole_cards[p]) + flattened_board_cards) if not players_folded[p] else None
-                        for p in range(self.player_count)]
+                        for p in range(player_count)]
         winners = get_winners(player_cards)
         winner_count = len(winners)
         value_per_winner = sum(pot_commitment) / winner_count
         return [value_per_winner - pot_commitment[p] if p in winners else -pot_commitment[p]
-                for p in range(self.player_count)]
+                for p in range(player_count)]
 
     def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
         num_hole_cards = nodes[0].card_count
@@ -157,10 +164,7 @@ class Cfr:
         strategy = node.strategy
         util = [None] * NUM_ACTIONS
         node_util = [0] * self.player_count
-        for a in range(NUM_ACTIONS):
-            if a not in node.children:
-                continue
-
+        for a in node.children:
             next_reach_probs = list(reach_probs)
             next_reach_probs[node_player] *= strategy[a]
 
@@ -178,9 +182,7 @@ class Cfr:
             for player in range(self.player_count):
                 node_util[player] += strategy[a] * action_util[player]
 
-        for a in range(NUM_ACTIONS):
-            if not util[a]:
-                continue
+        for a in node.children:
             regret = util[a][node_player] - node_util[node_player]
 
             opponent_reach_probs = reach_probs[0:node_player] + reach_probs[node_player + 1:]

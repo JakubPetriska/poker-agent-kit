@@ -4,7 +4,7 @@ import acpc_python_client as acpc
 
 
 def get_winners(hands):
-    scores = [(i, _score(_parse_hand(hand)) if hand else ((0,), (0,)))
+    scores = [(i, _score(hand) if hand else ((0,), (0,)))
               for i, hand in enumerate(hands)]
     sorted_scores = sorted(scores, key=lambda x: x[1])
     winning_score = sorted_scores[-1][1]
@@ -14,18 +14,18 @@ def get_winners(hands):
             winner_count += 1
         else:
             break
-    return list(map(lambda x: x[0], sorted_scores[len(hands) - winner_count:]))
+    return [score[0] for score in sorted_scores[len(hands) - winner_count:]]
 
 
 def _parse_hand(hand):
-    return list(map(lambda card: (acpc.game_utils.card_rank(card), acpc.game_utils.card_suit(card)), hand))
+    return map(lambda card: (acpc.game_utils.card_rank(card), acpc.game_utils.card_suit(card)), hand)
 
 
 def _score(hand):
     if len(hand) <= 5:
-        return _score_hand_combination(hand)
+        return _score_hand_combination(_parse_hand(hand))
     else:
-        # TODO create multiple 5 card combination from longer hand to allow Hold'em
+        # TODO create multiple 5 card combinations from longer hand to allow Texas Hold'em hand evaluation
         return ((0,), (0,))
 
 
