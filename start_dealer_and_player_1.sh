@@ -1,4 +1,9 @@
 #!/bin/bash
+# Play 1000 hands of a poker game through ACPC infrastructure and print results.
+# Script launches the dealer and random agents such that one place is left free in the game. The agent
+# can then join using the printed port number.
+#
+# Use this to debug the agent.
 
 if [ "$#" != 1 ]; then
   echo 'Usage: ./play_match.sh {game_dir}'

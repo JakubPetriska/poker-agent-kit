@@ -1,4 +1,9 @@
 #!/bin/bash
+# Play 1000 hands of a poker game through ACPC infrastructure and print results.
+# Agent trained using CFR is pitted against required number of agents (given by game's player count)
+# that are also trained using CFR.
+# However opponent agents are launched using different script so they can be trained with different number of
+# iterations, usually smaller.
 
 if [ "$#" != 1 ]; then
   echo 'Usage: ./play_against_random.sh {game_dir}'
