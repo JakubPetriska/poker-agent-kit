@@ -4,6 +4,17 @@ import acpc_python_client as acpc
 
 
 def get_winners(hands):
+    """Evaluate hands of players and determine winners.
+
+    !!! This function is currently only capable of evaluating hands that contain up to 5 cards. !!!
+
+    Args:
+        hands (list(list(int))): List which contains player's hands. Each player's hand is a list of integers
+                                 that represent player's cards. Board cards must be included in each player's hand.
+
+    Returns:
+        list(int): Indexes of winners. The pot should be split evenly between all winners.
+    """
     scores = [(i, _score(hand) if hand else ((0,), (0,)))
               for i, hand in enumerate(hands)]
     sorted_scores = sorted(scores, key=lambda x: x[1])

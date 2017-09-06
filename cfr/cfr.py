@@ -16,7 +16,17 @@ except ImportError:
 
 
 class Cfr:
+    """Creates new ACPC poker using CFR algorithm which runs for specified number of iterations.
+
+    !!! Currently only limit betting games are supported !!!
+    """
+
     def __init__(self, game):
+        """Build new CFR instance.
+
+        Args:
+            game (Game): ACPC game definition object.
+        """
         self.game = game
 
         game_tree_builder = GameTreeBuilder(game)
@@ -56,6 +66,20 @@ class Cfr:
                 Cfr._calculate_tree_average_strategy(child)
 
     def train(self, iterations, show_progress=True):
+        """Run CFR for given number of iterations.
+
+        The trained tree can be found by retrieving the game_tree
+        property from this object. The result strategy is stored
+        in average_strategy of each ActionNode in game tree.
+
+        This method can be called multiple times on one instance
+        to train more. This can be used for evaluation during training
+        and to make number of training iterations dynamic.
+
+        Args:
+            iterations (int): Number of iterations.
+            show_progress (bool): Show training progress bar.
+        """
         if not show_progress:
             iterations_iterable = range(iterations)
         else:
@@ -141,6 +165,7 @@ class Cfr:
 
     @staticmethod
     def _update_node_strategy(node, realization_weight):
+        """Update node strategy by normalizing regret sums."""
         normalizing_sum = 0
         for a in range(NUM_ACTIONS):
             node.strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
@@ -183,6 +208,7 @@ class Cfr:
                 node_util[player] += strategy[a] * action_util[player]
 
         for a in node.children:
+            # Calculate regret and add it to regret sums
             regret = util[a][node_player] - node_util[node_player]
 
             opponent_reach_probs = reach_probs[0:node_player] + reach_probs[node_player + 1:]

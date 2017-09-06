@@ -10,6 +10,16 @@ except ImportError:
 from cfr.cfr import Cfr
 from cfr.game_tree import HoleCardsNode, ActionNode, BoardCardsNode
 
+"""Trains strategy for poker agent using CFR algorithm and writes it to specified file.
+
+Usage:
+python train.py {game_file_path} {iterations} {strategy_output_path}
+
+  game_file_path: Path to ACPC game definition file of a poker game for which we want create the strategy.  
+  iterations: Number of iterations for which the CFR algorithm will run.
+  strategy_output_path: Path to file into which the result strategy will be written. 
+"""
+
 
 def _action_to_str(action):
     if action == 0:

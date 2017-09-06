@@ -22,6 +22,14 @@ def convert_action_to_str(action):
 
 
 def select_action(strategy):
+    """Randomly select action from node strategy.
+
+    Args:
+        strategy (list(float)): Strategy of the node
+
+    Returns:
+        acpc.ActionType: Selected action.
+    """
     choice = random.random()
     probability_sum = 0
     for i in range(3):
@@ -36,6 +44,17 @@ def select_action(strategy):
 
 
 def _get_info_set(game, match_state):
+    """Return unique string representing each game state.
+
+    Result is used as a node key in strategy.
+
+    Args:
+        game (Game): Game definition object
+        match_state (MatchState): Current game state
+
+    Returns:
+        string: Representation of current game state.
+    """
     state = match_state.get_state()
     info_set = ''
 
@@ -58,6 +77,8 @@ def _get_info_set(game, match_state):
 
 
 class StrategyAgent(acpc.Agent):
+    """Agent able to play any game when provided with game definition and correct strategy."""
+
     def __init__(self, strategy_file_path):
         super().__init__()
 

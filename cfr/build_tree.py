@@ -7,7 +7,11 @@ from cfr.game_tree import HoleCardsNode, ActionNode, TerminalNode, BoardCardsNod
 
 
 class GameTreeBuilder:
+    """Builds game tree from given ACPC game definition object."""
+
     class GameState:
+        """State of the game passed down through the recursive tree builder."""
+
         def __init__(self, game, deck):
             # Game properties
             self.players_folded = [False] * game.get_num_players()
@@ -21,6 +25,7 @@ class GameTreeBuilder:
             self.current_player = game.get_first_player(0)
 
         def next_round_state(self):
+            """Get copy of this state for new game round."""
             res = copy.deepcopy(self)
             res.rounds_left -= 1
             res.round_raise_count = 0
@@ -28,6 +33,7 @@ class GameTreeBuilder:
             return res
 
         def next_move_state(self):
+            """Get copy of this state for next move."""
             res = copy.deepcopy(self)
             res.players_acted += 1
             return res
@@ -38,8 +44,10 @@ class GameTreeBuilder:
             raise AttributeError('No limit betting games not supported')
 
     def build_tree(self):
+        """Builds and returns the game tree."""
         deck = acpc.game_utils.generate_deck(self.game)
 
+        # First generate hole cards node which is only generated once at the beginning of the game
         root = HoleCardsNode(None, self.game.get_num_hole_cards())
         num_hole_cards = self.game.get_num_hole_cards()
         hole_card_combinations = itertools.combinations(range(len(deck)), num_hole_cards)
@@ -49,6 +57,7 @@ class GameTreeBuilder:
             for hole_card_index in hole_cards_indexes:
                 del next_deck[hole_card_index]
             game_state = GameTreeBuilder.GameState(self.game, next_deck)
+            # Start first game round with board cards node
             self._generate_board_cards_node(root, hole_cards, game_state)
         return root
 
@@ -89,12 +98,14 @@ class GameTreeBuilder:
         all_acted = game_state.players_acted >= (player_count - sum(players_folded))
         if bets_settled and all_acted:
             if rounds_left > 1 and sum(players_folded) < player_count - 1:
+                # Start next game round with new board cards node
                 next_game_state = game_state.next_round_state()
                 next_game_state.current_player = \
                     self.game.get_first_player(self.game.get_num_rounds() - rounds_left + 1)
 
                 self._generate_board_cards_node(parent, child_key, next_game_state)
             else:
+                # This game tree branch ended, close it with terminal node
                 new_node = TerminalNode(parent, pot_commitment)
                 parent.children[child_key] = new_node
             return
