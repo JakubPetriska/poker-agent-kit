@@ -40,8 +40,6 @@ class GameTreeBuilder:
 
     def __init__(self, game):
         self.game = game
-        if game.get_betting_type() != acpc.BettingType.LIMIT:
-            raise AttributeError('No limit betting games not supported')
 
     def build_tree(self):
         """Builds and returns the game tree."""

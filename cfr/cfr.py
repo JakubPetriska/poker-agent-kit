@@ -18,7 +18,7 @@ except ImportError:
 class Cfr:
     """Creates new ACPC poker using CFR algorithm which runs for specified number of iterations.
 
-    !!! Currently only limit betting games are supported !!!
+    !!! Currently only limit betting games and games with up to 5 cards total are supported !!!
     """
 
     def __init__(self, game):
@@ -28,6 +28,13 @@ class Cfr:
             game (Game): ACPC game definition object.
         """
         self.game = game
+
+        if game.get_betting_type() != acpc.BettingType.LIMIT:
+            raise AttributeError('No-limit betting games not supported')
+
+        total_cards_count = game.get_num_hole_cards() + game.get_total_num_board_cards(game.get_num_rounds() - 1)
+        if total_cards_count > 5:
+            raise AttributeError('Only games with up to 5 cards are supported')
 
         game_tree_builder = GameTreeBuilder(game)
 
