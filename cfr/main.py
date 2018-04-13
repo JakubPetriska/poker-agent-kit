@@ -7,7 +7,7 @@ import acpc_python_client as acpc
 from cfr.build_tree import GameTreeBuilder
 from cfr.constants import NUM_ACTIONS
 from cfr.game_tree import HoleCardsNode, TerminalNode, ActionNode, BoardCardsNode
-from cfr.hand_evaluation import get_winners
+from tools.hand_evaluation import get_winners
 
 try:
     from tqdm import tqdm

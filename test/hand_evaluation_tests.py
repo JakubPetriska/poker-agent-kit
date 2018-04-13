@@ -1,6 +1,6 @@
 import unittest
 
-from cfr.hand_evaluation import get_winners
+from tools.hand_evaluation import get_winners
 
 #        Card values
 #

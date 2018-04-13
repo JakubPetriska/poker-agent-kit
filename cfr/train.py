@@ -1,4 +1,5 @@
 import sys
+import os
 
 import acpc_python_client as acpc
 
@@ -7,7 +8,7 @@ try:
 except ImportError:
     print('!!! Install tqdm library for better progress information !!!\n')
 
-from cfr.cfr import Cfr
+from cfr.main import Cfr
 from cfr.game_tree import HoleCardsNode, ActionNode, BoardCardsNode
 
 """Trains strategy for poker agent using CFR algorithm and writes it to specified file.
@@ -15,9 +16,9 @@ from cfr.game_tree import HoleCardsNode, ActionNode, BoardCardsNode
 Usage:
 python train.py {game_file_path} {iterations} {strategy_output_path}
 
-  game_file_path: Path to ACPC game definition file of a poker game for which we want create the strategy.  
+  game_file_path: Path to ACPC game definition file of a poker game for which we want create the strategy.
   iterations: Number of iterations for which the CFR algorithm will run.
-  strategy_output_path: Path to file into which the result strategy will be written. 
+  strategy_output_path: Path to file into which the result strategy will be written.
 """
 
 
@@ -48,6 +49,8 @@ def _get_strategy_lines(lines, node, prefix=''):
 
 
 def _write_to_output_file(output_path, lines):
+    if not os.path.exists(output_path):
+        os.makedirs(os.path.dirname(output_path))
     with open(output_path, 'w') as file:
         for line in lines:
             file.write(line)
