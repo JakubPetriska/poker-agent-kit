@@ -97,7 +97,7 @@ class Cfr:
                 iterations_iterable = range(iterations)
 
         deck = acpc.game_utils.generate_deck(self.game)
-        for i in iterations_iterable:
+        for _ in iterations_iterable:
             current_deck = list(deck)
             random.shuffle(current_deck)
 
@@ -153,7 +153,7 @@ class Cfr:
         num_hole_cards = nodes[0].card_count
         next_hole_cards = []
         next_deck = list(deck)
-        for p in range(self.player_count):
+        for _ in range(self.player_count):
             next_hole_cards.append(tuple(sorted(next_deck[:num_hole_cards])))
             next_deck = next_deck[num_hole_cards:]
 
