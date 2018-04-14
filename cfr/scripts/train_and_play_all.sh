@@ -15,12 +15,8 @@ WORKSPACE_DIR="${SCRIPT_DIR}/../.."
 export PYTHONPATH="${PYTHONPATH}:${WORKSPACE_DIR}"
 
 for index in ${!GAMES[@]}; do
-  python ${WORKSPACE_DIR}/cfr/train.py \
-    "${WORKSPACE_DIR}/games/${GAMES[index]}.game" \
+  ${SCRIPT_DIR}/train_and_play.sh \
+    "games/${GAMES[index]}.game" \
     ${ITERATIONS[index]} \
-    "${WORKSPACE_DIR}/cfr/strategies/${GAMES[index]}.strategy"
-
-  for i in $(seq 1 ${GAME_PLAYS}); do
-    ${SCRIPT_DIR}/play_against_random.sh "games/${GAMES[index]}.game"
-  done
+    ${GAME_PLAYS}
 done
