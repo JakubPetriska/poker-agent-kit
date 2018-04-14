@@ -30,7 +30,7 @@ class Node:
         parent_str = str(self.parent)
         parents_children = list(filter(lambda item: item[1] == self, self.parent.children.items()))
         if len(parents_children) == 0:
-            raise RuntimeError('Parent does have this node as a child')
+            raise RuntimeError('Parent does not have this node as a child')
         child_key = parents_children[0][0]
         parent_type = type(self.parent)
         if parent_type == HoleCardsNode or parent_type == BoardCardsNode:
