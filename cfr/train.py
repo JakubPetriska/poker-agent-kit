@@ -10,6 +10,7 @@ except ImportError:
 
 from cfr.main import Cfr
 from tools.game_tree.nodes import HoleCardsNode, ActionNode, BoardCardsNode
+from tools.output_util import get_strategy
 
 """Trains strategy for poker agent using CFR algorithm and writes it to specified file.
 
@@ -20,31 +21,6 @@ python train.py {game_file_path} {iterations} {strategy_output_path}
   iterations: Number of iterations for which the CFR algorithm will run.
   strategy_output_path: Path to file into which the result strategy will be written.
 """
-
-
-def _action_to_str(action):
-    if action == 0:
-        return 'f'
-    elif action == 1:
-        return 'c'
-    else:
-        return 'r'
-
-
-def _get_strategy_lines(lines, node, prefix=''):
-    if isinstance(node, HoleCardsNode) or isinstance(node, BoardCardsNode):
-        for key, child_node in node.children.items():
-            new_prefix = prefix
-            if new_prefix and not new_prefix.endswith(':'):
-                new_prefix += ':'
-            new_prefix += ':'.join([str(card) for card in key]) + ':'
-            _get_strategy_lines(lines, child_node, new_prefix)
-    elif isinstance(node, ActionNode):
-        node_strategy_str = ' '.join([str(prob) for prob in node.average_strategy])
-        lines.append('%s %s\n' % (prefix, node_strategy_str))
-
-        for action, child_node in node.children.items():
-            _get_strategy_lines(lines, child_node, prefix + _action_to_str(action))
 
 
 def _write_to_output_file(output_path, lines):
@@ -58,13 +34,17 @@ def _write_to_output_file(output_path, lines):
 def _write_strategy(game_tree, iterations, output_path):
     strategy_file_lines = []
 
+    def process_strategy_line(strategy):
+        node_strategy_str = ' '.join([str(prob) for prob in strategy[1]])
+        strategy_file_lines.append('%s %s\n' % (strategy[0], node_strategy_str))
+
     try:
         with tqdm(total=1) as progress:
             progress.set_description('Obtaining strategy entries')
-            _get_strategy_lines(strategy_file_lines, game_tree)
+            get_strategy(game_tree, process_strategy_line)
             progress.update(1)
     except NameError:
-        _get_strategy_lines(strategy_file_lines, game_tree)
+        get_strategy(game_tree, process_strategy_line)
 
     try:
         with tqdm(total=1) as progress:

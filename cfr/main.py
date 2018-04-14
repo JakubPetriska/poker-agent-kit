@@ -21,7 +21,6 @@ class CfrActionNode(StrategyActionNode):
         super().__init__(parent, player)
         self.regret_sum = [0] * NUM_ACTIONS
         self.strategy_sum = [0] * NUM_ACTIONS
-        self.average_strategy = None
 
 
 class CfrNodeProvider(NodeProvider):
@@ -68,13 +67,13 @@ class Cfr:
         num_possible_actions = len(node.children)
         normalizing_sum = sum(node.strategy_sum)
         if normalizing_sum > 0:
-            node.average_strategy = [
+            node.strategy = [
                 node.strategy_sum[a] / normalizing_sum if a in node.children else 0
                 for a in range(NUM_ACTIONS)
             ]
         else:
             action_probability = 1.0 / num_possible_actions
-            node.average_strategy = [
+            node.strategy = [
                 action_probability if a in node.children else 0
                 for a in range(NUM_ACTIONS)
             ]
