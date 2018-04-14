@@ -1,4 +1,4 @@
-from cfr.constants import NUM_ACTIONS
+from tools.constants import NUM_ACTIONS
 
 
 def _tree_str_rec(root, offset):
@@ -28,16 +28,16 @@ class Node:
         if not self.parent:
             return ''
         parent_str = str(self.parent)
-        parents_children = list(filter(lambda item: item[1] == self, self.parent.children.items()))
+        parents_children = list(
+            filter(lambda item: item[1] == self, self.parent.children.items()))
         if len(parents_children) == 0:
             raise RuntimeError('Parent does not have this node as a child')
         child_key = parents_children[0][0]
-        parent_type = type(self.parent)
-        if parent_type == HoleCardsNode or parent_type == BoardCardsNode:
+        if isinstance(self.parent, HoleCardsNode) or isinstance(self.parent, BoardCardsNode):
             child_key = ':'.join([str(card) for card in child_key]) + ':'
             if parent_str and not parent_str.endswith(':'):
                 child_key = ':' + child_key
-        elif parent_type == ActionNode:
+        else:
             if child_key == 0:
                 child_key = 'f'
             elif child_key == 1:
@@ -69,7 +69,9 @@ class ActionNode(Node):
     def __init__(self, parent, player):
         super().__init__(parent)
         self.player = player
-        self.regret_sum = [0] * NUM_ACTIONS
+
+
+class StrategyActionNode(ActionNode):
+    def __init__(self, parent, player):
+        super().__init__(parent, player)
         self.strategy = [0] * NUM_ACTIONS
-        self.strategy_sum = [0] * NUM_ACTIONS
-        self.average_strategy = None

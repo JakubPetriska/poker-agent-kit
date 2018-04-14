@@ -3,11 +3,11 @@ import itertools
 
 import acpc_python_client as acpc
 
-from cfr.game_tree import HoleCardsNode, ActionNode, TerminalNode, BoardCardsNode
+from tools.game_tree.node_provider import NodeProvider
 
 
 class GameTreeBuilder:
-    """Builds game tree from given ACPC game definition object."""
+    """Builds poker game infoset tree from ACPC game definition object."""
 
     class GameState:
         """State of the game passed down through the recursive tree builder."""
@@ -38,15 +38,16 @@ class GameTreeBuilder:
             res.players_acted += 1
             return res
 
-    def __init__(self, game):
+    def __init__(self, game, node_provider=NodeProvider()):
         self.game = game
+        self.node_provider = node_provider
 
     def build_tree(self):
         """Builds and returns the game tree."""
         deck = acpc.game_utils.generate_deck(self.game)
 
         # First generate hole cards node which is only generated once at the beginning of the game
-        root = HoleCardsNode(None, self.game.get_num_hole_cards())
+        root = self.node_provider.create_hole_cards_node(None, self.game.get_num_hole_cards())
         num_hole_cards = self.game.get_num_hole_cards()
         hole_card_combinations = itertools.combinations(range(len(deck)), num_hole_cards)
         for hole_cards_indexes in hole_card_combinations:
@@ -66,7 +67,7 @@ class GameTreeBuilder:
         if num_board_cards <= 0:
             self._generate_action_node(parent, child_key, game_state)
         else:
-            new_node = BoardCardsNode(parent, num_board_cards)
+            new_node = self.node_provider.create_board_cards_node(parent, num_board_cards)
             parent.children[child_key] = new_node
 
             deck = game_state.deck
@@ -104,11 +105,11 @@ class GameTreeBuilder:
                 self._generate_board_cards_node(parent, child_key, next_game_state)
             else:
                 # This game tree branch ended, close it with terminal node
-                new_node = TerminalNode(parent, pot_commitment)
+                new_node = self.node_provider.create_terminal_node(parent, pot_commitment)
                 parent.children[child_key] = new_node
             return
 
-        new_node = ActionNode(parent, current_player)
+        new_node = self.node_provider.create_action_node(parent, current_player)
         parent.children[child_key] = new_node
 
         round_index = self.game.get_num_rounds() - rounds_left

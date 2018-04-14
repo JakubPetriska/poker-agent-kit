@@ -9,7 +9,7 @@ except ImportError:
     print('!!! Install tqdm library for better progress information !!!\n')
 
 from cfr.main import Cfr
-from cfr.game_tree import HoleCardsNode, ActionNode, BoardCardsNode
+from tools.game_tree.nodes import HoleCardsNode, ActionNode, BoardCardsNode
 
 """Trains strategy for poker agent using CFR algorithm and writes it to specified file.
 
@@ -32,15 +32,14 @@ def _action_to_str(action):
 
 
 def _get_strategy_lines(lines, node, prefix=''):
-    node_type = type(node)
-    if node_type == HoleCardsNode or node_type == BoardCardsNode:
+    if isinstance(node, HoleCardsNode) or isinstance(node, BoardCardsNode):
         for key, child_node in node.children.items():
             new_prefix = prefix
             if new_prefix and not new_prefix.endswith(':'):
                 new_prefix += ':'
             new_prefix += ':'.join([str(card) for card in key]) + ':'
             _get_strategy_lines(lines, child_node, new_prefix)
-    elif node_type == ActionNode:
+    elif isinstance(node, ActionNode):
         node_strategy_str = ' '.join([str(prob) for prob in node.average_strategy])
         lines.append('%s %s\n' % (prefix, node_strategy_str))
 

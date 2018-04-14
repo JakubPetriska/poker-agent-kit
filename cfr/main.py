@@ -4,15 +4,29 @@ from functools import reduce
 
 import acpc_python_client as acpc
 
-from cfr.build_tree import GameTreeBuilder
-from cfr.constants import NUM_ACTIONS
-from cfr.game_tree import HoleCardsNode, TerminalNode, ActionNode, BoardCardsNode
+from tools.constants import NUM_ACTIONS
+from tools.game_tree.builder import GameTreeBuilder
+from tools.game_tree.node_provider import NodeProvider
+from tools.game_tree.nodes import HoleCardsNode, TerminalNode, StrategyActionNode, BoardCardsNode
 from tools.hand_evaluation import get_winners
 
 try:
     from tqdm import tqdm
 except ImportError:
     pass
+
+
+class CfrActionNode(StrategyActionNode):
+    def __init__(self, parent, player):
+        super().__init__(parent, player)
+        self.regret_sum = [0] * NUM_ACTIONS
+        self.strategy_sum = [0] * NUM_ACTIONS
+        self.average_strategy = None
+
+
+class CfrNodeProvider(NodeProvider):
+    def create_action_node(self, parent, player):
+        return CfrActionNode(parent, player)
 
 
 class Cfr:
@@ -32,11 +46,12 @@ class Cfr:
         if game.get_betting_type() != acpc.BettingType.LIMIT:
             raise AttributeError('No-limit betting games not supported')
 
-        total_cards_count = game.get_num_hole_cards() + game.get_total_num_board_cards(game.get_num_rounds() - 1)
+        total_cards_count = game.get_num_hole_cards() \
+            + game.get_total_num_board_cards(game.get_num_rounds() - 1)
         if total_cards_count > 5:
             raise AttributeError('Only games with up to 5 cards are supported')
 
-        game_tree_builder = GameTreeBuilder(game)
+        game_tree_builder = GameTreeBuilder(game, CfrNodeProvider())
 
         try:
             with tqdm(total=1) as progress:
@@ -66,7 +81,7 @@ class Cfr:
 
     @staticmethod
     def _calculate_tree_average_strategy(node):
-        if type(node) == ActionNode:
+        if isinstance(node, CfrActionNode):
             Cfr._calculate_node_average_strategy(node)
         if node.children:
             for child in node.children.values():
@@ -167,7 +182,8 @@ class Cfr:
         next_nodes = [node.children[selected_board_cards]
                       for p, node in enumerate(nodes)]
         return self._cfr(next_nodes, reach_probs,
-                         hole_cards, board_cards + [selected_board_cards], deck[num_board_cards:],
+                         hole_cards, board_cards +
+                         [selected_board_cards], deck[num_board_cards:],
                          players_folded)
 
     @staticmethod
@@ -218,7 +234,8 @@ class Cfr:
             # Calculate regret and add it to regret sums
             regret = util[a][node_player] - node_util[node_player]
 
-            opponent_reach_probs = reach_probs[0:node_player] + reach_probs[node_player + 1:]
+            opponent_reach_probs = reach_probs[0:node_player] + \
+                reach_probs[node_player + 1:]
             reach_prob = reduce(operator.mul, opponent_reach_probs, 1)
             node.regret_sum[a] += regret * reach_prob
 
