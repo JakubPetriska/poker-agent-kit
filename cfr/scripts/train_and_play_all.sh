@@ -6,7 +6,7 @@
 # In general used to quickly verify nothing is fundamentally broken with CFR training algorithm.
 
 GAMES=("kuhn.limit.2p" "leduc.limit.2p")
-ITERATIONS=(100000 100000)
+ITERATIONS=(1000 10000)
 GAME_PLAYS=5
 
 SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
