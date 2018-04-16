@@ -3,10 +3,12 @@ from unittest import TestSuite
 
 from test.hand_evaluation_tests import HandEvaluationTests
 from test.exploitability_tests import ExploitabilityTests
+from test.cfr_tests import CfrTests
 
 test_classes = [
     HandEvaluationTests,
-    ExploitabilityTests
+    ExploitabilityTests,
+    CfrTests
 ]
 
 
