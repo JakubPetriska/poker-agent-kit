@@ -91,7 +91,7 @@ class Cfr:
             for child in node.children.values():
                 Cfr._calculate_tree_average_strategy(child)
 
-    def train(self, iterations):
+    def train(self, iterations, checkpoint_iterations=None, checkpoint_callback=lambda *args: None):
         """Run CFR for given number of iterations.
 
         The trained tree can be found by retrieving the game_tree
@@ -115,8 +115,14 @@ class Cfr:
             except NameError:
                 iterations_iterable = range(iterations)
 
+        if checkpoint_iterations is None or checkpoint_iterations <= 0 or checkpoint_iterations > iterations:
+            checkpoint_iterations = iterations
+
         deck = acpc.game_utils.generate_deck(self.game)
-        for _ in iterations_iterable:
+
+        iterations_left_to_checkpoint = checkpoint_iterations
+        checkpoint_index = 0
+        for i in iterations_iterable:
             current_deck = list(deck)
             random.shuffle(current_deck)
 
@@ -125,8 +131,15 @@ class Cfr:
                 [1] * self.player_count,
                 None, [], current_deck,
                 [False] * self.player_count)
+            iterations_left_to_checkpoint -= 1
 
-        Cfr._calculate_tree_average_strategy(self.game_tree)
+            if iterations_left_to_checkpoint == 0 or i == iterations - 1:
+                Cfr._calculate_tree_average_strategy(self.game_tree)
+                checkpoint_callback(self.game_tree, checkpoint_index, i + 1)
+                checkpoint_index += 1
+                iterations_left_to_checkpoint = checkpoint_iterations
+
+
 
     def _cfr(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
         node_type = type(nodes[0])
