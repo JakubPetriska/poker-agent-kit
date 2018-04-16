@@ -1,6 +1,7 @@
 # Project specific
 logs
 **/*.strategy
+test/cfr-correctness-plots
 
 # Ignore whole .idea folder
 .idea
