@@ -19,6 +19,7 @@ except ImportError:
 class CfrActionNode(StrategyActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
+        self.training_strategy = [0] * NUM_ACTIONS
         self.regret_sum = [0] * NUM_ACTIONS
         self.strategy_sum = [0] * NUM_ACTIONS
 
@@ -190,25 +191,25 @@ class Cfr:
         """Update node strategy by normalizing regret sums."""
         normalizing_sum = 0
         for a in range(NUM_ACTIONS):
-            node.strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
-            normalizing_sum += node.strategy[a]
+            node.training_strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
+            normalizing_sum += node.training_strategy[a]
 
         num_possible_actions = len(node.children)
         for a in range(NUM_ACTIONS):
             if normalizing_sum > 0:
-                node.strategy[a] /= normalizing_sum
+                node.training_strategy[a] /= normalizing_sum
             elif a in node.children:
-                node.strategy[a] = 1.0 / num_possible_actions
+                node.training_strategy[a] = 1.0 / num_possible_actions
             else:
-                node.strategy[a] = 0
-            node.strategy_sum[a] += realization_weight * node.strategy[a]
+                node.training_strategy[a] = 0
+            node.strategy_sum[a] += realization_weight * node.training_strategy[a]
 
     def _cfr_action(self, nodes, reach_probs,
                     hole_cards, board_cards, deck, players_folded):
         node_player = nodes[0].player
         node = nodes[node_player]
         Cfr._update_node_strategy(node, reach_probs[node_player])
-        strategy = node.strategy
+        strategy = node.training_strategy
         util = [None] * NUM_ACTIONS
         node_util = [0] * self.player_count
         for a in node.children:
