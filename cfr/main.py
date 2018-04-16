@@ -35,13 +35,14 @@ class Cfr:
     !!! Currently only limit betting games and games with up to 5 cards total are supported !!!
     """
 
-    def __init__(self, game):
+    def __init__(self, game, show_progress=True):
         """Build new CFR instance.
 
         Args:
             game (Game): ACPC game definition object.
         """
         self.game = game
+        self.show_progress = show_progress
 
         if game.get_betting_type() != acpc.BettingType.LIMIT:
             raise AttributeError('No-limit betting games not supported')
@@ -53,13 +54,16 @@ class Cfr:
 
         game_tree_builder = GameTreeBuilder(game, CfrNodeProvider())
 
-        try:
-            with tqdm(total=1) as progress:
-                progress.set_description('Building game tree')
-                self.game_tree = game_tree_builder.build_tree()
-                progress.update(1)
-        except NameError:
+        if not self.show_progress:
             self.game_tree = game_tree_builder.build_tree()
+        else:
+            try:
+                with tqdm(total=1) as progress:
+                    progress.set_description('Building game tree')
+                    self.game_tree = game_tree_builder.build_tree()
+                    progress.update(1)
+            except NameError:
+                self.game_tree = game_tree_builder.build_tree()
 
         self.player_count = game.get_num_players()
 
@@ -87,7 +91,7 @@ class Cfr:
             for child in node.children.values():
                 Cfr._calculate_tree_average_strategy(child)
 
-    def train(self, iterations, show_progress=True):
+    def train(self, iterations):
         """Run CFR for given number of iterations.
 
         The trained tree can be found by retrieving the game_tree
@@ -102,7 +106,7 @@ class Cfr:
             iterations (int): Number of iterations.
             show_progress (bool): Show training progress bar.
         """
-        if not show_progress:
+        if not self.show_progress:
             iterations_iterable = range(iterations)
         else:
             try:
