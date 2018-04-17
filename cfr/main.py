@@ -205,18 +205,16 @@ class Cfr:
     def _update_node_strategy(node, realization_weight):
         """Update node strategy by normalizing regret sums."""
         normalizing_sum = 0
-        for a in range(NUM_ACTIONS):
+        for a in node.children:
             node.training_strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
             normalizing_sum += node.training_strategy[a]
 
         num_possible_actions = len(node.children)
-        for a in range(NUM_ACTIONS):
+        for a in node.children:
             if normalizing_sum > 0:
                 node.training_strategy[a] /= normalizing_sum
-            elif a in node.children:
-                node.training_strategy[a] = 1.0 / num_possible_actions
             else:
-                node.training_strategy[a] = 0
+                node.training_strategy[a] = 1.0 / num_possible_actions
             node.strategy_sum[a] += realization_weight * node.training_strategy[a]
 
     def _cfr_action(self, nodes, reach_probs,
