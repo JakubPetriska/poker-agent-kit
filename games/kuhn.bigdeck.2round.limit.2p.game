@@ -3,9 +3,9 @@ limit
 numPlayers = 2
 numRounds = 2
 blind = 1 1
-raiseSize = 2 4
+raiseSize = 1 2
 firstPlayer = 1 1
-maxRaises = 2 2
+maxRaises = 1 1
 numSuits = 2
 numRanks = 3
 numHoleCards = 2

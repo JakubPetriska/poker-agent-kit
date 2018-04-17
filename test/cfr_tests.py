@@ -5,7 +5,8 @@ import acpc_python_client as acpc
 from cfr.main import Cfr
 
 KUHN_POKER_GAME_FILE_PATH = 'games/kuhn.limit.2p.game'
-SMALL_POKER_GAME_FILE_PATH = 'games/small.limit.2p.game'
+KUHN_BIG_DECK_POKER_GAME_FILE_PATH = 'games/kuhn.bigdeck.limit.2p.game'
+KUHN_BIG_DECK_2ROUND_POKER_GAME_FILE_PATH = 'games/kuhn.bigdeck.2round.limit.2p.game'
 LEDUC_POKER_GAME_FILE_PATH = 'games/leduc.limit.2p.game'
 
 
@@ -15,8 +16,13 @@ class CfrTests(unittest.TestCase):
         cfr = Cfr(game, show_progress=False)
         cfr.train(100)
 
-    def test_small_cfr_works(self):
-        game = acpc.read_game_file(SMALL_POKER_GAME_FILE_PATH)
+    def test_kuhn_bigdeck_cfr_works(self):
+        game = acpc.read_game_file(KUHN_BIG_DECK_POKER_GAME_FILE_PATH)
+        cfr = Cfr(game, show_progress=False)
+        cfr.train(100)
+
+    def test_kuhn_bigdeck_2round_cfr_works(self):
+        game = acpc.read_game_file(KUHN_BIG_DECK_2ROUND_POKER_GAME_FILE_PATH)
         cfr = Cfr(game, show_progress=False)
         cfr.train(100)
 
