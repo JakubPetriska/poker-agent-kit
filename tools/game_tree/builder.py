@@ -51,9 +51,9 @@ class GameTreeBuilder:
         num_hole_cards = self.game.get_num_hole_cards()
         hole_card_combinations = itertools.combinations(range(len(deck)), num_hole_cards)
         for hole_cards_indexes in hole_card_combinations:
-            hole_cards = tuple(map(lambda i: deck[i], hole_cards_indexes))
+            hole_cards = tuple(sorted(map(lambda i: deck[i], hole_cards_indexes)))
             next_deck = list(deck)
-            for hole_card_index in hole_cards_indexes:
+            for hole_card_index in reversed(hole_cards_indexes):
                 del next_deck[hole_card_index]
             game_state = GameTreeBuilder.GameState(self.game, next_deck)
             # Start first game round with board cards node
