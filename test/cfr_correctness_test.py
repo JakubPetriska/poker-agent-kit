@@ -83,23 +83,23 @@ class CfrCorrectnessTests(unittest.TestCase):
                 test_spec['checkpoint_iterations'],
                 checkpoint_callback)
 
-        plt.figure()
-        for i in range(test_spec['test_counts']):
-            plt.plot(iteration_counts, exploitability_values[i])
+            plt.figure()
+            for i in range(i + 1):
+                plt.plot(iteration_counts, exploitability_values[i])
 
-        plt.title(test_spec['title'])
-        plt.xlabel('Training iterations')
-        plt.ylabel('Strategy exploitability [mbb/g]')
-        plt.grid()
+            plt.title(test_spec['title'])
+            plt.xlabel('Training iterations')
+            plt.ylabel('Strategy exploitability [mbb/g]')
+            plt.grid()
 
-        game_name = test_spec['game_file_path'].split('/')[1][:-5]
-        figure_output_path = '%s/%s.png' % (FIGURES_FOLDER, game_name)
+            game_name = test_spec['game_file_path'].split('/')[1][:-5]
+            figure_output_path = '%s/%s.png' % (FIGURES_FOLDER, game_name)
 
-        figures_directory = os.path.dirname(figure_output_path)
-        if not os.path.exists(figures_directory):
-            os.makedirs(figures_directory)
+            figures_directory = os.path.dirname(figure_output_path)
+            if not os.path.exists(figures_directory):
+                os.makedirs(figures_directory)
 
-        plt.savefig(figure_output_path)
+            plt.savefig(figure_output_path)
 
         print('\033[91mThis test needs your assistance! ' +
             'Check the generated graph %s!\033[0m' % figure_output_path)
