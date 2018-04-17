@@ -1,6 +1,25 @@
 from functools import reduce
+import numpy as np
 
+from tools.utils import flatten
 import acpc_python_client as acpc
+
+
+def get_utility(hole_cards, board_cards, players_folded, pot_commitment):
+    num_players = len(players_folded)
+    flattened_board_cards = flatten(board_cards)
+    complete_hands = [
+        flatten(hole_cards[i], flattened_board_cards) if not players_folded[i] else None
+        for i in range(num_players)]
+    winners = get_winners(complete_hands)
+    winner_count = len(winners)
+    pot_size = np.sum(pot_commitment)
+    value_per_winner = pot_size / winner_count
+
+    utilities = np.array(pot_commitment) * -1
+    for winner in winners:
+        utilities[winner] += value_per_winner
+    return utilities
 
 
 def get_winners(hands):
