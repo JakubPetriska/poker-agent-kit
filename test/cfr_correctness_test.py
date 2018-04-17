@@ -10,7 +10,7 @@ import matplotlib.ticker as plticker
 import acpc_python_client as acpc
 
 from cfr.main import Cfr
-from evaluation.exploitability import ExploitabilityCalculator
+from evaluation.exploitability import Exploitability
 
 FIGURES_FOLDER = 'test/cfr-correctness-plots'
 
@@ -72,20 +72,21 @@ class CfrCorrectnessTests(unittest.TestCase):
 
             cfr = Cfr(game)
 
-            exploitability_calculator = ExploitabilityCalculator(game)
+            exploitability = Exploitability(game)
 
             def checkpoint_callback(game_tree, checkpoint_index, iterations):
                 if i == 0:
                     iteration_counts[checkpoint_index] = iterations
-                exploitability[i][checkpoint_index] = exploitability_calculator.get_exploitability(
-                    game_tree)
+                exploitability[i][checkpoint_index] = exploitability.evaluate(game_tree)
 
-            cfr.train(test_spec['training_iterations'],
-                    test_spec['checkpoint_iterations'], checkpoint_callback)
+            cfr.train(
+                test_spec['training_iterations'],
+                test_spec['checkpoint_iterations'],
+                checkpoint_callback)
 
         plt.figure()
         for i in range(test_spec['test_counts']):
-            plt.plot(iteration_counts, exploitability[i] * -1000)
+            plt.plot(iteration_counts, exploitability[i])
 
         plt.title(test_spec['title'])
         plt.xlabel('Training iterations')
