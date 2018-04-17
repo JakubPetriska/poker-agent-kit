@@ -139,8 +139,6 @@ class Cfr:
                 checkpoint_index += 1
                 iterations_left_to_checkpoint = checkpoint_iterations
 
-
-
     def _cfr(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
         node_type = type(nodes[0])
         if node_type == TerminalNode:
