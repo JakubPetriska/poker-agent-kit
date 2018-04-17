@@ -63,30 +63,29 @@ class CfrCorrectnessTests(unittest.TestCase):
     def train_and_show_results(self, test_spec):
         game = acpc.read_game_file(test_spec['game_file_path'])
 
+        exploitability = Exploitability(game)
+
         checkpoints_count = math.ceil(
             test_spec['training_iterations'] / test_spec['checkpoint_iterations'])
         iteration_counts = np.zeros(checkpoints_count)
-        exploitability = np.zeros([test_spec['test_counts'], checkpoints_count])
+        exploitability_values = np.zeros([test_spec['test_counts'], checkpoints_count])
+
         for i in range(test_spec['test_counts']):
             print('%s/%s' % (i + 1, test_spec['test_counts']))
-
-            cfr = Cfr(game)
-
-            exploitability = Exploitability(game)
 
             def checkpoint_callback(game_tree, checkpoint_index, iterations):
                 if i == 0:
                     iteration_counts[checkpoint_index] = iterations
-                exploitability[i][checkpoint_index] = exploitability.evaluate(game_tree)
+                exploitability_values[i][checkpoint_index] = exploitability.evaluate(game_tree)
 
-            cfr.train(
+            Cfr(game).train(
                 test_spec['training_iterations'],
                 test_spec['checkpoint_iterations'],
                 checkpoint_callback)
 
         plt.figure()
         for i in range(test_spec['test_counts']):
-            plt.plot(iteration_counts, exploitability[i])
+            plt.plot(iteration_counts, exploitability_values[i])
 
         plt.title(test_spec['title'])
         plt.xlabel('Training iterations')
