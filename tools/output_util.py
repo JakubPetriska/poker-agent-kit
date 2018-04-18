@@ -24,6 +24,17 @@ def get_strategy(tree, callback, prefix=''):
             get_strategy(child_node, callback, prefix + _action_to_str(action))
 
 
+def get_strategy_lines(tree):
+    strategy_lines = []
+
+    def process_node_strategy(strategy):
+        node_strategy_str = ' '.join([str(prob) for prob in strategy[1]])
+        strategy_lines.append('%s %s\n' % (strategy[0], node_strategy_str))
+
+    get_strategy(tree, process_node_strategy)
+    return strategy_lines
+
+
 def print_strategy(tree):
     def print_strategy_line(strategy):
         node_strategy_str = ' '.join([str(prob) for prob in strategy[1]])

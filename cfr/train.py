@@ -10,7 +10,7 @@ except ImportError:
 
 from cfr.main import Cfr
 from tools.game_tree.nodes import HoleCardsNode, ActionNode, BoardCardsNode
-from tools.output_util import get_strategy
+from tools.output_util import get_strategy_lines
 
 """Trains strategy for poker agent using CFR algorithm and writes it to specified file.
 
@@ -32,19 +32,15 @@ def _write_to_output_file(output_path, lines):
 
 
 def _write_strategy(game_tree, iterations, output_path):
-    strategy_file_lines = []
-
-    def process_strategy_line(strategy):
-        node_strategy_str = ' '.join([str(prob) for prob in strategy[1]])
-        strategy_file_lines.append('%s %s\n' % (strategy[0], node_strategy_str))
+    strategy_file_lines = None
 
     try:
         with tqdm(total=1) as progress:
             progress.set_description('Obtaining strategy entries')
-            get_strategy(game_tree, process_strategy_line)
+            strategy_file_lines = get_strategy_lines(game_tree)
             progress.update(1)
     except NameError:
-        get_strategy(game_tree, process_strategy_line)
+        strategy_file_lines = get_strategy_lines(game_tree)
 
     try:
         with tqdm(total=1) as progress:
