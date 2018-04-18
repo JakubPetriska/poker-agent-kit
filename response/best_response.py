@@ -112,7 +112,7 @@ class BestResponse:
             return values_sum
         else:
             best_value = None
-            best_value_action = None
+            best_value_actions = None
             for a in best_response_node.children:
                 player_value = self._get_exploitability(
                     player_position,
@@ -122,6 +122,10 @@ class BestResponse:
                     board_cards)
                 if (best_value is None) or (player_value < best_value):
                     best_value = player_value
-                    best_value_action = a
-            best_response_node.strategy[best_value_action] = 1
+                    best_value_actions = [a]
+                elif player_value == best_value:
+                    best_value_actions.append(a)
+            best_value_action_probability = 1 / len(best_value_actions)
+            for a in best_value_actions:
+                best_response_node.strategy[a] = best_value_action_probability
             return best_value
