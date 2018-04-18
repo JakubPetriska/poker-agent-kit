@@ -47,17 +47,13 @@ class BestResponse:
         player_value_sum = 0
         num_player_values = 0
         for player_cards in itertools.combinations(deck, num_hole_cards):
-            hands = None
-            if player_position == 0:
-                hands = [player_cards, best_response_cards]
-            else:
-                hands = [best_response_cards, player_cards]
+            hands = [player_cards, best_response_cards]
             winners = get_winners(hands)
             winner_count = len(winners)
             pot_amount = np.sum(node.pot_commitment)
             per_winner_value = pot_amount / winner_count
             player_value_sum += -node.pot_commitment[player_position] + \
-                (per_winner_value if player_position in winners else 0)
+                (per_winner_value if 0 in winners else 0)
             num_player_values += 1
         return player_value_sum / num_player_values
 

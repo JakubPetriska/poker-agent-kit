@@ -42,8 +42,8 @@ class GameValue:
                     values = np.append(values, [player_values], 0)
             return np.mean(values, 0)
         elif isinstance(node, BoardCardsNode):
-            values = np.zeros([len(node.children), self.game.get_num_players()])
             possible_board_cards = intersection(*map(lambda node: node.children, nodes))
+            values = np.zeros([len(possible_board_cards), self.game.get_num_players()])
             for i, next_board_cards in enumerate(possible_board_cards):
                 new_nodes = [node.children[next_board_cards] for node in nodes]
                 new_board_cards = flatten(board_cards, next_board_cards)
