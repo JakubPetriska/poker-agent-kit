@@ -1,3 +1,5 @@
+import os
+
 from tools.game_tree.nodes import HoleCardsNode, ActionNode, BoardCardsNode
 
 
@@ -34,9 +36,10 @@ def get_strategy_lines(tree):
     get_strategy(tree, process_node_strategy)
     return strategy_lines
 
-
-def print_strategy(tree):
-    def print_strategy_line(strategy):
-        node_strategy_str = ' '.join([str(prob) for prob in strategy[1]])
-        print('%s %s' % (strategy[0], node_strategy_str))
-    get_strategy(tree, print_strategy_line)
+def write_strategy_to_file(tree, output_path):
+    output_directory = os.path.dirname(output_path)
+    if output_directory and not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    with open(output_path, 'w') as file:
+        for line in sorted(get_strategy_lines(tree)):
+            file.write(line)
