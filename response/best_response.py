@@ -82,20 +82,27 @@ class BestResponse:
             return player_values_sum / len(best_response_node.children)
 
         elif isinstance(best_response_node, BoardCardsNode):
-            raise RuntimeError('Board cards not yet supported')
-            # player_values_sum = 0
-            # for cards in best_response_node.children:
-            #     new_board_cards = flatten(board_cards, cards)
-            #     new_player_nodes = filter(lambda node: cards in node.children, player_nodes)
-            #     new_player_nodes = map(lambda node: node.children[cards], new_player_nodes)
+            player_values_sum = 0
+            for cards in best_response_node.children:
+                new_board_cards = flatten(board_cards, cards)
 
-            #     player_values_sum += self._get_exploitability(
-            #         player_position,
-            #         best_response_node.children[cards],
-            #         list(new_player_nodes),
-            #         best_response_cards,
-            #         new_board_cards)
-            # return player_values_sum / len(best_response_node.children)
+                new_player_states = np.empty([0, 3])
+                for state in player_states:
+                    if cards in state[0].children:
+                        new_player_states = np.append(
+                            new_player_states,
+                            [[state[0].children[cards], state[1], state[2]]],
+                            axis=0)
+
+                new_player_states[:, 1] = 1 / len(new_player_states)
+
+                player_values_sum += self._get_exploitability(
+                    player_position,
+                    best_response_node.children[cards],
+                    new_player_states,
+                    best_response_cards,
+                    new_board_cards)
+            return player_values_sum / len(best_response_node.children)
 
         elif best_response_node.player == player_position:
             player_node_strategy = np.zeros(3)

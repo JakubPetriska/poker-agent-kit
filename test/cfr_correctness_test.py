@@ -23,7 +23,7 @@ KUHN_TEST_SPEC = {
     'game_file_path': 'games/kuhn.limit.2p.game',
     'test_counts': 3,
     'training_iterations': 12000,
-    'checkpoint_iterations': 10
+    'checkpoint_iterations': 20
 }
 
 KUHN_BIGDECK_TEST_SPEC = {
@@ -31,7 +31,7 @@ KUHN_BIGDECK_TEST_SPEC = {
     'game_file_path': 'games/kuhn.bigdeck.limit.2p.game',
     'test_counts': 3,
     'training_iterations': 12000,
-    'checkpoint_iterations': 10
+    'checkpoint_iterations': 20
 }
 
 KUHN_BIGDECK_2ROUND_TEST_SPEC = {
@@ -46,8 +46,8 @@ LEDUC_TEST_SPEC = {
     'title': 'Leduc Hold\'em Poker CFR trained strategy exploitability',
     'game_file_path': 'games/leduc.limit.2p.game',
     'test_counts': 3,
-    'training_iterations': 10,
-    'checkpoint_iterations': 1
+    'training_iterations': 20000,
+    'checkpoint_iterations': 20
 }
 
 
