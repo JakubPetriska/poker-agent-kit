@@ -56,7 +56,8 @@ def _score(hand):
         return _score_hand_combination(_parse_hand(hand))
     else:
         # TODO create multiple 5 card combinations from longer hand to allow Texas Hold'em hand evaluation
-        return ((0,), (0,))
+        raise AttributeError(
+                'Only games with up to 5 cards in hand are supported')
 
 
 def _score_hand_combination(hand):
