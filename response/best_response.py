@@ -26,86 +26,98 @@ class BestResponse:
         best_response = game_tree_builder.build_tree()
 
         for position in range(2):
-            self._get_exploitability(position, best_response, strategy, [], [])
+            self._get_exploitability(position, best_response, [strategy], [1], [], [], [])
 
         return best_response
 
-    def _get_terminal_node_player_utility(self, player_position, node, best_response_cards, board_cards):
-        parent_action = list(filter(lambda item: item[1] == node, node.parent.children.items()))[0][0]
-        if parent_action == 0:
-            player_folded = node.parent.player
-            pot_amount = np.sum(node.pot_commitment)
-            return -node.pot_commitment[player_position] + \
-                (pot_amount if player_position != player_folded else 0)
-
-
-        deck = filter(
-            lambda card: card not in best_response_cards and card not in board_cards,
-            generate_deck(self.game))
-        num_hole_cards = self.game.get_num_hole_cards()
-
-        player_value_sum = 0
-        num_player_values = 0
-        for player_cards in itertools.combinations(deck, num_hole_cards):
-            hands = [player_cards, best_response_cards]
-            winners = get_winners(hands)
-            winner_count = len(winners)
-            pot_amount = np.sum(node.pot_commitment)
-            per_winner_value = pot_amount / winner_count
-            player_value_sum += -node.pot_commitment[player_position] + \
-                (per_winner_value if 0 in winners else 0)
-            num_player_values += 1
-        return player_value_sum / num_player_values
-
     def _get_exploitability(
-            self, player_position, best_response_node, player_possible_nodes, best_response_cards, board_cards):
+            self,
+            player_position,
+            best_response_node,
+            player_nodes,
+            player_nodes_reach_proabilities,
+            player_cards,
+            best_response_cards,
+            board_cards):
+
         if isinstance(best_response_node, TerminalNode):
-            return self._get_terminal_node_player_utility(player_position, best_response_node, best_response_cards, board_cards)
+            parent_action = list(filter(lambda item: item[1] == best_response_node, best_response_node.parent.children.items()))[0][0]
+            if parent_action == 0:
+                player_folded = best_response_node.parent.player
+                pot_amount = np.sum(best_response_node.pot_commitment)
+                return -best_response_node.pot_commitment[player_position] + \
+                    (pot_amount if player_position != player_folded else 0)
+
+            player_value_sum = 0
+            for i, cards in enumerate(player_cards):
+                hands = [cards, best_response_cards]
+                winners = get_winners(hands)
+                winner_count = len(winners)
+                pot_amount = np.sum(best_response_node.pot_commitment)
+                per_winner_value = pot_amount / winner_count
+                player_value = -best_response_node.pot_commitment[player_position] + \
+                    (per_winner_value if 0 in winners else 0)
+                player_value_sum += player_value * player_nodes_reach_proabilities[i]
+            return player_value_sum
+
+
         elif isinstance(best_response_node, HoleCardsNode):
             player_values_sum = 0
             for cards in best_response_node.children:
-                new_player_cards = flatten(best_response_cards, cards)
-                next_player_possible_nodes = []
+                new_bets_response_cards = flatten(best_response_cards, cards)
+                new_player_nodes = []
+                new_player_cards = []
                 for other_cards in best_response_node.children:
-                    if len(intersection(cards, other_cards)) == 0 \
-                        and len(intersection(cards, board_cards)) == 0:
-                        next_player_possible_nodes.append(player_possible_nodes.children[other_cards])
+                    if len(intersection(cards, other_cards)) == 0 and len(intersection(cards, board_cards)) == 0:
+                        new_player_nodes.append([node.children[other_cards] for node in player_nodes])
+                        new_player_cards.append(other_cards)
+                new_player_nodes = flatten(*new_player_nodes)
+                new_player_nodes_reach_probabilities = np.array([1 / len(new_player_nodes)] * len(new_player_nodes))
+
                 player_values_sum += self._get_exploitability(
                     player_position,
                     best_response_node.children[cards],
-                    next_player_possible_nodes,
+                    new_player_nodes,
+                    new_player_nodes_reach_probabilities,
                     new_player_cards,
+                    new_bets_response_cards,
                     board_cards)
             return player_values_sum / len(best_response_node.children)
+
         elif isinstance(best_response_node, BoardCardsNode):
-            player_values_sum = 0
-            for cards in best_response_node.children:
-                new_board_cards = flatten(board_cards, cards)
-                new_player_possible_nodes = filter(lambda node: cards in node.children, player_possible_nodes)
-                new_player_possible_nodes = map(lambda node: node.children[cards], new_player_possible_nodes)
-                player_values_sum += self._get_exploitability(
-                    player_position,
-                    best_response_node.children[cards],
-                    list(new_player_possible_nodes),
-                    best_response_cards,
-                    new_board_cards)
-            return player_values_sum / len(best_response_node.children)
+            raise RuntimeError('Board cards not yet supported')
+            # player_values_sum = 0
+            # for cards in best_response_node.children:
+            #     new_board_cards = flatten(board_cards, cards)
+            #     new_player_nodes = filter(lambda node: cards in node.children, player_nodes)
+            #     new_player_nodes = map(lambda node: node.children[cards], new_player_nodes)
+
+            #     player_values_sum += self._get_exploitability(
+            #         player_position,
+            #         best_response_node.children[cards],
+            #         list(new_player_nodes),
+            #         best_response_cards,
+            #         new_board_cards)
+            # return player_values_sum / len(best_response_node.children)
+
         elif best_response_node.player == player_position:
-            strategy_sum = np.zeros(3)
-            for player_node in player_possible_nodes:
-                strategy_sum += player_node.strategy
-            player_node_strategy = strategy_sum / len(player_possible_nodes)
+            player_node_strategy = np.zeros(3)
+            for i, player_node in enumerate(player_nodes):
+                player_node_strategy += np.array(player_node.strategy) * player_nodes_reach_proabilities[i]
 
             values_sum = 0
             for a in best_response_node.children:
                 player_value = self._get_exploitability(
                     player_position,
                     best_response_node.children[a],
-                    list(map(lambda node: node.children[a], player_possible_nodes)),
+                    list(map(lambda node: node.children[a], player_nodes)),
+                    player_nodes_reach_proabilities * player_node_strategy[a],
+                    player_cards,
                     best_response_cards,
                     board_cards)
                 values_sum += player_value * player_node_strategy[a]
             return values_sum
+
         else:
             best_value = None
             best_value_actions = None
@@ -113,9 +125,12 @@ class BestResponse:
                 player_value = self._get_exploitability(
                     player_position,
                     best_response_node.children[a],
-                    list(map(lambda node: node.children[a], player_possible_nodes)),
+                    list(map(lambda node: node.children[a], player_nodes)),
+                    player_nodes_reach_proabilities,
+                    player_cards,
                     best_response_cards,
                     board_cards)
+
                 if (best_value is None) or (player_value < best_value):
                     best_value = player_value
                     best_value_actions = [a]
