@@ -26,7 +26,7 @@ class BestResponse:
         best_response = game_tree_builder.build_tree()
 
         for position in range(2):
-            self._get_exploitability(position, best_response, [strategy], [1], [], [], [])
+            self._get_exploitability(position, best_response, np.array([[strategy, 1, ()]]), [], [])
 
         return best_response
 
@@ -34,9 +34,7 @@ class BestResponse:
             self,
             player_position,
             best_response_node,
-            player_nodes,
-            player_nodes_reach_proabilities,
-            player_cards,
+            player_states,
             best_response_cards,
             board_cards):
 
@@ -49,15 +47,15 @@ class BestResponse:
                     (pot_amount if player_position != player_folded else 0)
 
             player_value_sum = 0
-            for i, cards in enumerate(player_cards):
-                hands = [cards, best_response_cards]
+            for state in player_states:
+                hands = [state[2], best_response_cards]
                 winners = get_winners(hands)
                 winner_count = len(winners)
                 pot_amount = np.sum(best_response_node.pot_commitment)
                 per_winner_value = pot_amount / winner_count
                 player_value = -best_response_node.pot_commitment[player_position] + \
                     (per_winner_value if 0 in winners else 0)
-                player_value_sum += player_value * player_nodes_reach_proabilities[i]
+                player_value_sum += player_value * state[1]
             return player_value_sum
 
 
@@ -65,21 +63,20 @@ class BestResponse:
             player_values_sum = 0
             for cards in best_response_node.children:
                 new_bets_response_cards = flatten(best_response_cards, cards)
-                new_player_nodes = []
-                new_player_cards = []
+                new_player_states = np.empty([0, 3])
                 for other_cards in best_response_node.children:
                     if len(intersection(cards, other_cards)) == 0 and len(intersection(cards, board_cards)) == 0:
-                        new_player_nodes.append([node.children[other_cards] for node in player_nodes])
-                        new_player_cards.append(other_cards)
-                new_player_nodes = flatten(*new_player_nodes)
-                new_player_nodes_reach_probabilities = np.array([1 / len(new_player_nodes)] * len(new_player_nodes))
+                        for state in player_states:
+                            new_player_states = np.append(
+                                new_player_states,
+                                [[state[0].children[other_cards], -1, other_cards]],
+                                axis=0)
+                new_player_states[:, 1] = 1 / len(new_player_states)
 
                 player_values_sum += self._get_exploitability(
                     player_position,
                     best_response_node.children[cards],
-                    new_player_nodes,
-                    new_player_nodes_reach_probabilities,
-                    new_player_cards,
+                    new_player_states,
                     new_bets_response_cards,
                     board_cards)
             return player_values_sum / len(best_response_node.children)
@@ -102,17 +99,22 @@ class BestResponse:
 
         elif best_response_node.player == player_position:
             player_node_strategy = np.zeros(3)
-            for i, player_node in enumerate(player_nodes):
-                player_node_strategy += np.array(player_node.strategy) * player_nodes_reach_proabilities[i]
+            for state in player_states:
+                player_node_strategy += np.array(state[0].strategy) * state[1]
 
             values_sum = 0
             for a in best_response_node.children:
+                new_player_states = np.empty([0, 3])
+                for state in player_states:
+                    new_player_states = np.append(
+                        new_player_states,
+                        [[state[0].children[a], state[1] * player_node_strategy[a], state[2]]],
+                        axis=0)
+
                 player_value = self._get_exploitability(
                     player_position,
                     best_response_node.children[a],
-                    list(map(lambda node: node.children[a], player_nodes)),
-                    player_nodes_reach_proabilities * player_node_strategy[a],
-                    player_cards,
+                    new_player_states,
                     best_response_cards,
                     board_cards)
                 values_sum += player_value * player_node_strategy[a]
@@ -122,12 +124,17 @@ class BestResponse:
             best_value = None
             best_value_actions = None
             for a in best_response_node.children:
+                new_player_states = np.empty([0, 3])
+                for state in player_states:
+                    new_player_states = np.append(
+                        new_player_states,
+                        [[state[0].children[a], state[1], state[2]]],
+                        axis=0)
+
                 player_value = self._get_exploitability(
                     player_position,
                     best_response_node.children[a],
-                    list(map(lambda node: node.children[a], player_nodes)),
-                    player_nodes_reach_proabilities,
-                    player_cards,
+                    new_player_states,
                     best_response_cards,
                     board_cards)
 
