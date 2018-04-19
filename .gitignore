@@ -1,7 +1,10 @@
 # Project specific
-logs
-**/*.strategy
-test/cfr-correctness-plots
+*.strategy
+*.png
+## ACPC logs
+*.err
+*.std
+*.log
 
 # Ignore whole .idea folder
 .idea
