@@ -1,6 +1,7 @@
 import operator
 import random
 from functools import reduce
+import numpy as np
 
 import acpc_python_client as acpc
 
@@ -68,30 +69,39 @@ class Cfr:
         self.player_count = game.get_num_players()
 
     @staticmethod
-    def _calculate_node_average_strategy(node):
-        num_possible_actions = len(node.children)
+    def _calculate_node_average_strategy(node, minimal_action_probability):
         normalizing_sum = sum(node.strategy_sum)
         if normalizing_sum > 0:
-            node.strategy = [
-                node.strategy_sum[a] / normalizing_sum if a in node.children else 0
-                for a in range(NUM_ACTIONS)
-            ]
+            node.strategy = np.array(node.strategy_sum) / normalizing_sum
+            if minimal_action_probability:
+                normalize = False
+                for a in range(NUM_ACTIONS):
+                    action_probability = node.strategy[a]
+                    if action_probability > 0 and action_probability < minimal_action_probability:
+                        node.strategy[a] = 0
+                        normalize = True
+                if normalize:
+                    node.strategy = node.strategy / sum(node.strategy)
         else:
-            action_probability = 1.0 / num_possible_actions
+            action_probability = 1.0 / len(node.children)
             node.strategy = [
                 action_probability if a in node.children else 0
-                for a in range(NUM_ACTIONS)
-            ]
+                for a in range(NUM_ACTIONS)]
 
     @staticmethod
-    def _calculate_tree_average_strategy(node):
+    def _calculate_tree_average_strategy(node, minimal_action_probability):
         if isinstance(node, CfrActionNode):
-            Cfr._calculate_node_average_strategy(node)
+            Cfr._calculate_node_average_strategy(node, minimal_action_probability)
         if node.children:
             for child in node.children.values():
-                Cfr._calculate_tree_average_strategy(child)
+                Cfr._calculate_tree_average_strategy(child, minimal_action_probability)
 
-    def train(self, iterations, checkpoint_iterations=None, checkpoint_callback=lambda *args: None):
+    def train(
+        self,
+        iterations,
+        checkpoint_iterations=None,
+        checkpoint_callback=lambda *args: None,
+        minimal_action_probability=None):
         """Run CFR for given number of iterations.
 
         The trained tree can be found by retrieving the game_tree
@@ -134,7 +144,7 @@ class Cfr:
             iterations_left_to_checkpoint -= 1
 
             if iterations_left_to_checkpoint == 0 or i == iterations - 1:
-                Cfr._calculate_tree_average_strategy(self.game_tree)
+                Cfr._calculate_tree_average_strategy(self.game_tree, minimal_action_probability)
                 checkpoint_callback(self.game_tree, checkpoint_index, i + 1)
                 checkpoint_index += 1
                 iterations_left_to_checkpoint = checkpoint_iterations
