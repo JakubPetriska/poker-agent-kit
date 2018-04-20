@@ -15,15 +15,14 @@ class GameValue:
         if len(args) != num_players:
             raise AttributeError(
                 'Only %s strategies provided for game with %s players' % (len(args), num_players))
-        game_values_sum = np.zeros(num_players)
-        player_positions_count = 0
-        for player_positions in itertools.permutations(range(num_players)):
-            nodes = [args[pos] for pos in player_positions]
-            game_values = self._get_game_values(nodes, [], [], [False] * num_players)
-            for i in range(num_players):
-                game_values_sum[i] += game_values[player_positions[i]]
-            player_positions_count += 1
-        return (game_values_sum / player_positions_count).tolist()
+        game_values = np.empty([0, num_players])
+        player_positions = np.empty([0, num_players])
+        for positions in itertools.permutations(range(num_players)):
+            nodes = [args[pos] for pos in positions]
+            position_game_values = self._get_game_values(nodes, [], [], [False] * num_players)
+            game_values = np.append(game_values, [position_game_values], axis=0)
+            player_positions = np.append(player_positions, [positions], axis=0)
+        return game_values, player_positions
 
     def _get_game_values(self, nodes, hole_cards, board_cards, players_folded):
         node = nodes[0]

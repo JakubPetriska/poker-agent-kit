@@ -25,8 +25,9 @@ class BestResponseGameValueTests(unittest.TestCase):
         walk_tree(strategy, on_node)
 
         best_response = BestResponse(game).solve(strategy)
-        game_values = GameValue(game).evaluate(strategy, best_response)
-        self.assertEqual(game_values, [-1 / 3, 1 / 3])
+        game_values, player_positions = GameValue(game).evaluate(strategy, best_response)
+        self.assertEqual(game_values.tolist(), [[-1 / 3, 1 / 3], [1 / 3, -1 / 3]])
+        self.assertEqual(player_positions.tolist(), [[0, 1], [1, 0]])
 
     def test_kuhn_always_fold_value(self):
         game = acpc.read_game_file(KUHN_POKER_GAME_FILE_PATH)
@@ -42,8 +43,9 @@ class BestResponseGameValueTests(unittest.TestCase):
         walk_tree(strategy, on_node)
 
         best_response = BestResponse(game).solve(strategy)
-        game_values = GameValue(game).evaluate(strategy, best_response)
-        self.assertEqual(game_values, [-1, 1])
+        game_values, player_positions = GameValue(game).evaluate(strategy, best_response)
+        self.assertEqual(game_values.tolist(), [[-1, 1], [1, -1]])
+        self.assertEqual(player_positions.tolist(), [[0, 1], [1, 0]])
 
     def test_leduc_always_fold_value(self):
         game = acpc.read_game_file(LEDUC_POKER_GAME_FILE_PATH)
@@ -59,8 +61,9 @@ class BestResponseGameValueTests(unittest.TestCase):
         walk_tree(strategy, on_node)
 
         best_response = BestResponse(game).solve(strategy)
-        game_values = GameValue(game).evaluate(strategy, best_response)
-        self.assertEqual(game_values, [-1, 1])
+        game_values, player_positions = GameValue(game).evaluate(strategy, best_response)
+        self.assertEqual(game_values.tolist(), [[-1, 1], [1, -1]])
+        self.assertEqual(player_positions.tolist(), [[0, 1], [1, 0]])
 
     def test_leduc_always_call_not_crashing(self):
         game = acpc.read_game_file(LEDUC_POKER_GAME_FILE_PATH)
@@ -73,8 +76,14 @@ class BestResponseGameValueTests(unittest.TestCase):
         walk_tree(strategy, on_node)
 
         best_response = BestResponse(game).solve(strategy)
-        game_values = GameValue(game).evaluate(strategy, best_response)
-        self.assertLess(game_values[0], 0)
+        game_values, player_positions = GameValue(game).evaluate(strategy, best_response)
+        for i in range(game_values.shape[0]):
+            for j in range(game_values.shape[1]):
+                if i == j:
+                    self.assertLess(game_values[i, j], 0)
+                else:
+                    self.assertGreater(game_values[i, j], 0)
+        self.assertEqual(player_positions.tolist(), [[0, 1], [1, 0]])
 
     def test_leduc_uniform_not_crashing(self):
         game = acpc.read_game_file(LEDUC_POKER_GAME_FILE_PATH)
@@ -90,5 +99,11 @@ class BestResponseGameValueTests(unittest.TestCase):
         walk_tree(strategy, on_node)
 
         best_response = BestResponse(game).solve(strategy)
-        game_values = GameValue(game).evaluate(strategy, best_response)
-        self.assertLess(game_values[0], 0)
+        game_values, player_positions = GameValue(game).evaluate(strategy, best_response)
+        for i in range(game_values.shape[0]):
+            for j in range(game_values.shape[1]):
+                if i == j:
+                    self.assertLess(game_values[i, j], 0)
+                else:
+                    self.assertGreater(game_values[i, j], 0)
+        self.assertEqual(player_positions.tolist(), [[0, 1], [1, 0]])
