@@ -10,9 +10,7 @@ import matplotlib.ticker as plticker
 import acpc_python_client as acpc
 
 from cfr.main import Cfr
-# from evaluation.exploitability import Exploitability
-from response.best_response import BestResponse
-from evaluation.game_value import GameValue
+from evaluation.exploitability import Exploitability
 
 from tools.output_util import write_strategy_to_file
 
@@ -21,7 +19,7 @@ FIGURES_FOLDER = 'test/cfr-correctness-plots'
 KUHN_TEST_SPEC = {
     'title': 'Kuhn Poker CFR trained strategy exploitability',
     'game_file_path': 'games/kuhn.limit.2p.game',
-    'test_counts': 3,
+    'test_counts': 1,
     'training_iterations': 12000,
     'checkpoint_iterations': 20
 }
@@ -67,13 +65,12 @@ class CfrCorrectnessTests(unittest.TestCase):
     def train_and_show_results(self, test_spec):
         game = acpc.read_game_file(test_spec['game_file_path'])
 
-        # exploitability = Exploitability(game)
+        exploitability = Exploitability(game)
 
         checkpoints_count = math.ceil(
             test_spec['training_iterations'] / test_spec['checkpoint_iterations'])
         iteration_counts = np.zeros(checkpoints_count)
-        exploitability_values = np.zeros([test_spec['test_counts'], checkpoints_count])
-        # exploitability_values = np.zeros([test_spec['test_counts'] * 2, checkpoints_count])
+        exploitability_values = np.zeros([test_spec['test_counts'] * 2, checkpoints_count])
 
         for i in range(test_spec['test_counts']):
             print('%s/%s' % (i + 1, test_spec['test_counts']))
@@ -81,11 +78,11 @@ class CfrCorrectnessTests(unittest.TestCase):
             def checkpoint_callback(game_tree, checkpoint_index, iterations):
                 if i == 0:
                     iteration_counts[checkpoint_index] = iterations
-                # exploitability_values[i * 2][checkpoint_index] = exploitability.evaluate(game_tree)
+                exploitability_values[i * 2:(i * 2) + 2, checkpoint_index] = exploitability.evaluate(game_tree)
 
-                best_response = BestResponse(game).solve(game_tree)
-                game_values = GameValue(game).evaluate(game_tree, best_response)
-                exploitability_values[i][checkpoint_index] = game_values[0] * -1000
+                # best_response = BestResponse(game).solve(game_tree)
+                # game_values = GameValue(game).evaluate(game_tree, best_response)
+                # exploitability_values[i][checkpoint_index] = game_values[0] * -1000
                 # exploitability_values[i * 2 + 1][checkpoint_index] = game_values[0] * -1000
 
             Cfr(game).train(
@@ -93,18 +90,23 @@ class CfrCorrectnessTests(unittest.TestCase):
                 test_spec['checkpoint_iterations'],
                 checkpoint_callback)
 
-            plt.figure()
-            for i in range(i + 1):
-                plt.plot(iteration_counts, exploitability_values[i], linewidth=0.8)
-            # for i in range((i + 1) * 2):
-            #     method = 'Exploitability' if i % 2 == 0 else 'Best response + Game value'
-            #     plt.plot(iteration_counts, exploitability_values[i], label='%s %s' % (method, math.ceil((i + 1) / 2)))
+            plt.figure(dpi=160)
+            # for i in range(i + 1):
+            #     plt.plot(iteration_counts, exploitability_values[i], linewidth=0.8)
+            for j in range((i + 1) * 2):
+                run_index = math.floor(j / 2)
+                player_position = j % 2
+                plt.plot(
+                    iteration_counts,
+                    exploitability_values[j],
+                    label='Run %s, player position %s' % (run_index + 1, player_position),
+                    linewidth=0.8)
 
             plt.title(test_spec['title'])
             plt.xlabel('Training iterations')
             plt.ylabel('Strategy exploitability [mbb/g]')
             plt.grid()
-            # plt.legend()
+            plt.legend()
 
             game_name = test_spec['game_file_path'].split('/')[1][:-5]
             figure_output_path = '%s/%s.png' % (FIGURES_FOLDER, game_name)
