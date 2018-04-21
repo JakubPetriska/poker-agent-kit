@@ -5,7 +5,7 @@ from tools.hand_evaluation import get_winners, get_utility
 #        Card values
 #
 #           Suit
-#        0  1  2  3
+#        c  d  h  s
 #       ------------
 #    2 | 0  1  2  3
 #    3 | 4  5  6  7
