@@ -139,7 +139,9 @@ class Cfr:
             self._cfr(
                 [self.game_tree] * self.player_count,
                 [1] * self.player_count,
-                None, [], current_deck,
+                None,
+                [],
+                current_deck,
                 [False] * self.player_count)
             iterations_left_to_checkpoint -= 1
 
@@ -153,21 +155,32 @@ class Cfr:
         node_type = type(nodes[0])
         if node_type == TerminalNode:
             return self._cfr_terminal(
-                nodes, hole_cards, board_cards, deck,
+                nodes,
+                hole_cards,
+                board_cards,
+                deck,
                 players_folded)
         elif node_type == HoleCardsNode:
             return self._cfr_hole_cards(
-                nodes, reach_probs,
-                hole_cards, board_cards, deck,
+                nodes,
+                reach_probs,
+                hole_cards,
+                board_cards, deck,
                 players_folded)
         elif node_type == BoardCardsNode:
             return self._cfr_board_cards(
-                nodes, reach_probs,
-                hole_cards, board_cards, deck,
+                nodes,
+                reach_probs,
+                hole_cards,
+                board_cards,
+                deck,
                 players_folded)
         return self._cfr_action(
-            nodes, reach_probs,
-            hole_cards, board_cards, deck,
+            nodes,
+            reach_probs,
+            hole_cards,
+            board_cards,
+            deck,
             players_folded)
 
     def _cfr_terminal(self, nodes, hole_cards, board_cards, deck, players_folded):
@@ -206,10 +219,13 @@ class Cfr:
         selected_board_cards = tuple(sorted(deck[:num_board_cards]))
         next_nodes = [node.children[selected_board_cards]
                       for p, node in enumerate(nodes)]
-        return self._cfr(next_nodes, reach_probs,
-                         hole_cards, board_cards +
-                         [selected_board_cards], deck[num_board_cards:],
-                         players_folded)
+        return self._cfr(
+            next_nodes,
+            reach_probs,
+            hole_cards,
+            board_cards + [selected_board_cards],
+            deck[num_board_cards:],
+            players_folded)
 
     @staticmethod
     def _update_node_strategy(node, realization_weight):
