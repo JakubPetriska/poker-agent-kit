@@ -1,0 +1,8 @@
+# name/game/hands/seed /home/jakub/Projects/poker/poker-agent-kit/cfr/scripts/../../logs/leduc.limit.2p /home/jakub/Projects/poker/poker-agent-kit/cfr/scripts/../../games/leduc.limit.2p.game 1000 1524298979
+#--t_response 600000
+#--t_hand 600000
+#--t_per_hand 7000
+STATE:0:cc/cc:Qs|Ks/Ah:9|-9:player_1|player_2
+STATE:0:cc/cc:Qs|Ks/Ah:9|-9:player_2|player_1
+STATE:0:cc/cc:Ks|Qs/Ah:9|-9:player_1|player_2
+STATE:0:cc/cc:Ks|Qs/Ah:9|-9:player_2|player_1

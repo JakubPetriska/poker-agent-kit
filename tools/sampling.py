@@ -32,7 +32,7 @@ def read_log_file(
 
     with open(log_file_path, 'r') as strategy_file:
         for line in strategy_file:
-            if not line.strip() or line.strip().startswith('#'):
+            if not line.strip() or line.strip().startswith('#') or len(line.split(':')) == 3:
                 continue
             player_names = [name.strip() for name in line.split(':')[-1].split('|')]
             state = acpc.parse_state(game_file_path, line)
