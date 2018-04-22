@@ -59,7 +59,8 @@ def _get_info_set(game, match_state):
     info_set = ''
 
     num_hole_cards = game.get_num_hole_cards()
-    info_set += '%s:' % ':'.join([str(state.get_hole_card(i)) for i in range(num_hole_cards)])
+    viewing_player = match_state.get_viewing_player()
+    info_set += '%s:' % ':'.join([str(state.get_hole_card(viewing_player, i)) for i in range(num_hole_cards)])
 
     total_board_cards_count = 0
     for round_index in range(state.get_round() + 1):
