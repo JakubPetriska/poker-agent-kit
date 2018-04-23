@@ -16,7 +16,7 @@ class GameValue:
             raise AttributeError(
                 'Only %s strategies provided for game with %s players' % (len(args), num_players))
         game_values = np.empty([0, num_players])
-        player_positions = np.empty([0, num_players])
+        player_positions = np.empty([0, num_players], dtype=np.intp)
         for positions in itertools.permutations(range(num_players)):
             nodes = [args[pos] for pos in positions]
             position_game_values = self._get_game_values(nodes, [], [], [False] * num_players)

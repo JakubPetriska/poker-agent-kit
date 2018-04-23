@@ -26,11 +26,11 @@ class BestResponse:
         best_response = game_tree_builder.build_tree()
 
         for position in range(2):
-            self._get_exploitability(position, best_response, np.array([[strategy, 1, ()]]), [], [])
+            self._solve(position, best_response, np.array([[strategy, 1, ()]]), [], [])
 
         return best_response
 
-    def _get_exploitability(
+    def _solve(
             self,
             player_position,
             best_response_node,
@@ -62,22 +62,21 @@ class BestResponse:
         elif isinstance(best_response_node, HoleCardsNode):
             player_values_sum = 0
             for cards in best_response_node.children:
-                new_bets_response_cards = flatten(best_response_cards, cards)
+                new_best_response_cards = flatten(best_response_cards, cards)
                 new_player_states = np.empty([0, 3])
                 for other_cards in best_response_node.children:
                     if len(intersection(cards, other_cards)) == 0 and len(intersection(cards, board_cards)) == 0:
                         for state in player_states:
                             new_player_states = np.append(
                                 new_player_states,
-                                [[state[0].children[other_cards], -1, other_cards]],
+                                [[state[0].children[other_cards], state[1], other_cards]],
                                 axis=0)
-                new_player_states[:, 1] = 1 / len(new_player_states)
 
-                player_values_sum += self._get_exploitability(
+                player_values_sum += self._solve(
                     player_position,
                     best_response_node.children[cards],
                     new_player_states,
-                    new_bets_response_cards,
+                    new_best_response_cards,
                     board_cards)
             return player_values_sum / len(best_response_node.children)
 
@@ -94,9 +93,7 @@ class BestResponse:
                             [[state[0].children[cards], state[1], state[2]]],
                             axis=0)
 
-                new_player_states[:, 1] = 1 / len(new_player_states)
-
-                player_values_sum += self._get_exploitability(
+                player_values_sum += self._solve(
                     player_position,
                     best_response_node.children[cards],
                     new_player_states,
@@ -105,26 +102,21 @@ class BestResponse:
             return player_values_sum / len(best_response_node.children)
 
         elif best_response_node.player == player_position:
-            player_node_strategy = np.zeros(3)
-            for state in player_states:
-                player_node_strategy += np.array(state[0].strategy) * state[1]
-
             values_sum = 0
             for a in best_response_node.children:
                 new_player_states = np.empty([0, 3])
                 for state in player_states:
                     new_player_states = np.append(
                         new_player_states,
-                        [[state[0].children[a], state[1] * player_node_strategy[a], state[2]]],
+                        [[state[0].children[a], state[1] * state[0].strategy[a], state[2]]],
                         axis=0)
 
-                player_value = self._get_exploitability(
+                values_sum += self._solve(
                     player_position,
                     best_response_node.children[a],
                     new_player_states,
                     best_response_cards,
                     board_cards)
-                values_sum += player_value * player_node_strategy[a]
             return values_sum
 
         else:
@@ -138,7 +130,7 @@ class BestResponse:
                         [[state[0].children[a], state[1], state[2]]],
                         axis=0)
 
-                player_value = self._get_exploitability(
+                player_value = self._solve(
                     player_position,
                     best_response_node.children[a],
                     new_player_states,
