@@ -199,19 +199,18 @@ class Cfr:
     def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
         hole_card_combination_probability = 1 / get_num_hole_card_combinations(self.game)
         next_reach_probs = reach_probs * hole_card_combination_probability
-        # TODO possibly optimize this
         value_sums = np.zeros(self.player_count)
         hole_cards = [node.children for node in nodes]
-        for hole_cards_combination in itertools.product(*hole_cards):
-            if is_unique(*hole_cards_combination):
-                next_nodes = [node.children[hole_cards_combination[i]] for i, node in enumerate(nodes)]
-                player_values = self._cfr(
-                    next_nodes,
-                    next_reach_probs,
-                    hole_cards_combination,
-                    board_cards,
-                    players_folded)
-                value_sums += player_values * hole_card_combination_probability
+        hole_card_combinations = filter(lambda comb: is_unique(*comb), itertools.product(*hole_cards))
+        for hole_cards_combination in hole_card_combinations:
+            next_nodes = [node.children[hole_cards_combination[i]] for i, node in enumerate(nodes)]
+            player_values = self._cfr(
+                next_nodes,
+                next_reach_probs,
+                hole_cards_combination,
+                board_cards,
+                players_folded)
+            value_sums += player_values * hole_card_combination_probability
         return value_sums
 
     def _cfr_board_cards(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
