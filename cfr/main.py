@@ -2,6 +2,7 @@ import operator
 import random
 from functools import reduce
 import numpy as np
+import itertools
 
 import acpc_python_client as acpc
 
@@ -10,6 +11,8 @@ from tools.game_tree.builder import GameTreeBuilder
 from tools.game_tree.node_provider import NodeProvider
 from tools.game_tree.nodes import HoleCardsNode, TerminalNode, StrategyActionNode, BoardCardsNode
 from tools.hand_evaluation import get_winners
+from tools.game_utils import get_num_hole_card_combinations
+from tools.utils import is_unique, intersection
 
 try:
     from tqdm import tqdm
@@ -20,9 +23,9 @@ except ImportError:
 class CfrActionNode(StrategyActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
-        self.training_strategy = [0] * NUM_ACTIONS
-        self.regret_sum = [0] * NUM_ACTIONS
-        self.strategy_sum = [0] * NUM_ACTIONS
+        self.training_strategy = np.zeros(NUM_ACTIONS)
+        self.regret_sum = np.zeros(NUM_ACTIONS)
+        self.strategy_sum = np.zeros(NUM_ACTIONS)
 
 
 class CfrNodeProvider(NodeProvider):
@@ -128,20 +131,14 @@ class Cfr:
         if checkpoint_iterations is None or checkpoint_iterations <= 0 or checkpoint_iterations > iterations:
             checkpoint_iterations = iterations
 
-        deck = acpc.game_utils.generate_deck(self.game)
-
         iterations_left_to_checkpoint = checkpoint_iterations
         checkpoint_index = 0
         for i in iterations_iterable:
-            current_deck = list(deck)
-            random.shuffle(current_deck)
-
             self._cfr(
                 [self.game_tree] * self.player_count,
-                [1] * self.player_count,
+                np.ones(self.player_count),
                 None,
                 [],
-                current_deck,
                 [False] * self.player_count)
             iterations_left_to_checkpoint -= 1
 
@@ -151,21 +148,20 @@ class Cfr:
                 checkpoint_index += 1
                 iterations_left_to_checkpoint = checkpoint_iterations
 
-    def _cfr(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
+    def _cfr(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
         node_type = type(nodes[0])
         if node_type == TerminalNode:
             return self._cfr_terminal(
                 nodes,
                 hole_cards,
                 board_cards,
-                deck,
                 players_folded)
         elif node_type == HoleCardsNode:
             return self._cfr_hole_cards(
                 nodes,
                 reach_probs,
                 hole_cards,
-                board_cards, deck,
+                board_cards,
                 players_folded)
         elif node_type == BoardCardsNode:
             return self._cfr_board_cards(
@@ -173,17 +169,15 @@ class Cfr:
                 reach_probs,
                 hole_cards,
                 board_cards,
-                deck,
                 players_folded)
         return self._cfr_action(
             nodes,
             reach_probs,
             hole_cards,
             board_cards,
-            deck,
             players_folded)
 
-    def _cfr_terminal(self, nodes, hole_cards, board_cards, deck, players_folded):
+    def _cfr_terminal(self, nodes, hole_cards, board_cards, players_folded):
         player_count = self.player_count
         pot_commitment = nodes[0].pot_commitment
 
@@ -199,33 +193,44 @@ class Cfr:
         winners = get_winners(player_cards)
         winner_count = len(winners)
         value_per_winner = sum(pot_commitment) / winner_count
-        return [value_per_winner - pot_commitment[p] if p in winners else -pot_commitment[p]
-                for p in range(player_count)]
+        return np.array([value_per_winner - pot_commitment[p] if p in winners else -pot_commitment[p]
+            for p in range(player_count)])
 
-    def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
-        num_hole_cards = nodes[0].card_count
-        next_hole_cards = []
-        next_deck = list(deck)
-        for _ in range(self.player_count):
-            next_hole_cards.append(tuple(sorted(next_deck[:num_hole_cards])))
-            next_deck = next_deck[num_hole_cards:]
+    def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
+        hole_card_combination_probability = 1 / get_num_hole_card_combinations(self.game)
+        next_reach_probs = reach_probs * hole_card_combination_probability
+        # TODO possibly optimize this
+        value_sums = np.zeros(self.player_count)
+        hole_cards = [node.children for node in nodes]
+        for hole_cards_combination in itertools.product(*hole_cards):
+            if is_unique(*hole_cards_combination):
+                next_nodes = [node.children[hole_cards_combination[i]] for i, node in enumerate(nodes)]
+                player_values = self._cfr(
+                    next_nodes,
+                    next_reach_probs,
+                    hole_cards_combination,
+                    board_cards,
+                    players_folded)
+                value_sums += player_values * hole_card_combination_probability
+        return value_sums
 
-        next_nodes = [node.children[next_hole_cards[p]]
-                      for p, node in enumerate(nodes)]
-        return self._cfr(next_nodes, reach_probs, next_hole_cards, board_cards, next_deck, players_folded)
+    def _cfr_board_cards(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
+        possible_board_cards = intersection(*map(lambda node: node.children, nodes))
+        board_cards_combination_probability = 1 / len(possible_board_cards)
+        next_reach_probs = reach_probs * board_cards_combination_probability
 
-    def _cfr_board_cards(self, nodes, reach_probs, hole_cards, board_cards, deck, players_folded):
-        num_board_cards = nodes[0].card_count
-        selected_board_cards = tuple(sorted(deck[:num_board_cards]))
-        next_nodes = [node.children[selected_board_cards]
-                      for p, node in enumerate(nodes)]
-        return self._cfr(
-            next_nodes,
-            reach_probs,
-            hole_cards,
-            board_cards + [selected_board_cards],
-            deck[num_board_cards:],
-            players_folded)
+        value_sums = np.zeros(self.player_count)
+        for next_board_cards in possible_board_cards:
+            selected_board_cards = tuple(sorted(next_board_cards))
+            next_nodes = [node.children[selected_board_cards] for i, node in enumerate(nodes)]
+            player_values = self._cfr(
+                next_nodes,
+                next_reach_probs,
+                hole_cards,
+                board_cards + [selected_board_cards],
+                players_folded)
+            value_sums += player_values * board_cards_combination_probability
+        return value_sums
 
     @staticmethod
     def _update_node_strategy(node, realization_weight):
@@ -244,15 +249,15 @@ class Cfr:
             node.strategy_sum[a] += realization_weight * node.training_strategy[a]
 
     def _cfr_action(self, nodes, reach_probs,
-                    hole_cards, board_cards, deck, players_folded):
+                    hole_cards, board_cards, players_folded):
         node_player = nodes[0].player
         node = nodes[node_player]
         Cfr._update_node_strategy(node, reach_probs[node_player])
         strategy = node.training_strategy
         util = [None] * NUM_ACTIONS
-        node_util = [0] * self.player_count
+        node_util = np.zeros(self.player_count)
         for a in node.children:
-            next_reach_probs = list(reach_probs)
+            next_reach_probs =  np.copy(reach_probs)
             next_reach_probs[node_player] *= strategy[a]
 
             if a == 0:
@@ -264,7 +269,9 @@ class Cfr:
             action_util = self._cfr(
                 [node.children[a] for node in nodes],
                 next_reach_probs,
-                hole_cards, board_cards, deck, next_players_folded)
+                hole_cards,
+                board_cards,
+                next_players_folded)
             util[a] = action_util
             for player in range(self.player_count):
                 node_util[player] += strategy[a] * action_util[player]
@@ -273,9 +280,9 @@ class Cfr:
             # Calculate regret and add it to regret sums
             regret = util[a][node_player] - node_util[node_player]
 
-            opponent_reach_probs = reach_probs[0:node_player] + \
-                reach_probs[node_player + 1:]
-            reach_prob = reduce(operator.mul, opponent_reach_probs, 1)
-            node.regret_sum[a] += regret * reach_prob
+            opponent_reach_probs = np.concatenate([
+                reach_probs[0:node_player],
+                reach_probs[node_player + 1:]])
+            node.regret_sum[a] += regret * np.prod(opponent_reach_probs)
 
         return node_util

@@ -21,8 +21,8 @@ FIGURES_FOLDER = 'test/cfr_correctness'
 KUHN_TEST_SPEC = {
     'title': 'Kuhn Poker CFR trained strategy exploitability',
     'game_file_path': 'games/kuhn.limit.2p.game',
-    'test_counts': 2,
-    'training_iterations': 50000,
+    'test_counts': 1,
+    'training_iterations': 5000,
     'checkpoint_iterations': 10
 }
 
@@ -30,7 +30,7 @@ KUHN_BIGDECK_TEST_SPEC = {
     'title': 'Kuhn Bigdeck Poker CFR trained strategy exploitability',
     'game_file_path': 'games/kuhn.bigdeck.limit.2p.game',
     'test_counts': 1,
-    'training_iterations': 20000,
+    'training_iterations': 10000,
     'checkpoint_iterations': 10
 }
 
@@ -38,8 +38,8 @@ KUHN_BIGDECK_2ROUND_TEST_SPEC = {
     'title': 'Kuhn Bigdeck 2round Poker CFR trained strategy exploitability',
     'game_file_path': 'games/kuhn.bigdeck.2round.limit.2p.game',
     'test_counts': 1,
-    'training_iterations': 12000,
-    'checkpoint_iterations': 20
+    'training_iterations': 20000,
+    'checkpoint_iterations': 1000
 }
 
 LEDUC_TEST_SPEC = {
@@ -87,7 +87,7 @@ class CfrCorrectnessTests(unittest.TestCase):
                 test_spec['training_iterations'],
                 test_spec['checkpoint_iterations'],
                 checkpoint_callback,
-                minimal_action_probability=0.00004)
+                minimal_action_probability=0.00006)
 
             best_response = BestResponse(game).solve(cfr.game_tree)
             game_values, _ = GameValue(game).evaluate(cfr.game_tree, best_response)
