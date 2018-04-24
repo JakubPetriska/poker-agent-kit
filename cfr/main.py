@@ -48,6 +48,10 @@ class Cfr:
         self.game = game
         self.show_progress = show_progress
 
+        if game.get_num_players() != 2:
+            raise AttributeError(
+                'Only games with 2 players are supported')
+
         if game.get_betting_type() != acpc.BettingType.LIMIT:
             raise AttributeError('No-limit betting games not supported')
 
@@ -279,9 +283,12 @@ class Cfr:
             # Calculate regret and add it to regret sums
             regret = util[a][node_player] - node_util[node_player]
 
-            opponent_reach_probs = np.concatenate([
-                reach_probs[0:node_player],
-                reach_probs[node_player + 1:]])
-            node.regret_sum[a] += regret * np.prod(opponent_reach_probs)
+            # TODO use this to adapt the algo for more than 2 players
+            # opponent_reach_probs = np.concatenate([
+            #     reach_probs[0:node_player],
+            #     reach_probs[node_player + 1:]])
+            # node.regret_sum[a] += regret * np.prod(opponent_reach_probs)
+
+            node.regret_sum[a] += regret * reach_probs[(node_player + 1) % 2]
 
         return node_util
