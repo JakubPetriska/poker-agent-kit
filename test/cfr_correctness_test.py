@@ -18,51 +18,47 @@ from tools.output_util import write_strategy_to_file
 
 FIGURES_FOLDER = 'test/cfr_correctness'
 
-KUHN_TEST_SPEC = {
-    'title': 'Kuhn Poker CFR trained strategy exploitability',
-    'game_file_path': 'games/kuhn.limit.2p.game',
-    'test_counts': 1,
-    'training_iterations': 5000,
-    'checkpoint_iterations': 10
-}
-
-KUHN_BIGDECK_TEST_SPEC = {
-    'title': 'Kuhn Bigdeck Poker CFR trained strategy exploitability',
-    'game_file_path': 'games/kuhn.bigdeck.limit.2p.game',
-    'test_counts': 1,
-    'training_iterations': 10000,
-    'checkpoint_iterations': 10
-}
-
-KUHN_BIGDECK_2ROUND_TEST_SPEC = {
-    'title': 'Kuhn Bigdeck 2round Poker CFR trained strategy exploitability',
-    'game_file_path': 'games/kuhn.bigdeck.2round.limit.2p.game',
-    'test_counts': 1,
-    'training_iterations': 20000,
-    'checkpoint_iterations': 1000
-}
-
-LEDUC_TEST_SPEC = {
-    'title': 'Leduc Hold\'em Poker CFR trained strategy exploitability',
-    'game_file_path': 'games/leduc.limit.2p.game',
-    'test_counts': 1,
-    'training_iterations': 1000,
-    'checkpoint_iterations': 10
-}
-
 
 class CfrCorrectnessTests(unittest.TestCase):
     def test_kuhn_cfr_correctness(self):
-        self.train_and_show_results(KUHN_TEST_SPEC)
+        kuhn_test_spec = {
+            'title': 'Kuhn Poker CFR trained strategy exploitability',
+            'game_file_path': 'games/kuhn.limit.2p.game',
+            'test_counts': 1,
+            'training_iterations': 20000,
+            'checkpoint_iterations': 50
+        }
+        self.train_and_show_results(kuhn_test_spec)
 
     def test_kuhn_bigdeck_cfr_correctness(self):
-        self.train_and_show_results(KUHN_BIGDECK_TEST_SPEC)
+        kuhn_bigdeck_test_spec = {
+            'title': 'Kuhn Bigdeck Poker CFR trained strategy exploitability',
+            'game_file_path': 'games/kuhn.bigdeck.limit.2p.game',
+            'test_counts': 1,
+            'training_iterations': 20000,
+            'checkpoint_iterations': 50
+        }
+        self.train_and_show_results(kuhn_bigdeck_test_spec)
 
     def test_kuhn_bigdeck_2round_cfr_correctness(self):
-        self.train_and_show_results(KUHN_BIGDECK_2ROUND_TEST_SPEC)
+        kuhn_bigdeck_2round_test_spec = {
+            'title': 'Kuhn Bigdeck 2round Poker CFR trained strategy exploitability',
+            'game_file_path': 'games/kuhn.bigdeck.2round.limit.2p.game',
+            'test_counts': 1,
+            'training_iterations': 200000,
+            'checkpoint_iterations': 1000
+        }
+        self.train_and_show_results(kuhn_bigdeck_2round_test_spec)
 
     def test_leduc_cfr_correctness(self):
-        self.train_and_show_results(LEDUC_TEST_SPEC)
+        leduc_test_spec = {
+            'title': 'Leduc Hold\'em Poker CFR trained strategy exploitability',
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'test_counts': 1,
+            'training_iterations': 200000,
+            'checkpoint_iterations': 2000
+        }
+        self.train_and_show_results(leduc_test_spec)
 
     def train_and_show_results(self, test_spec):
         game = acpc.read_game_file(test_spec['game_file_path'])
@@ -93,8 +89,6 @@ class CfrCorrectnessTests(unittest.TestCase):
             game_values, _ = GameValue(game).evaluate(cfr.game_tree, best_response)
             print(game_values.tolist())
 
-            write_strategy_to_file(cfr.game_tree, 'test/cfr_correctness/cfr.strategy')
-
             plt.figure(dpi=160)
             for j in range(i + 1):
                 run_index = math.floor(j / 2)
@@ -119,6 +113,8 @@ class CfrCorrectnessTests(unittest.TestCase):
                 os.makedirs(figures_directory)
 
             plt.savefig(figure_output_path)
+
+            write_strategy_to_file(cfr.game_tree, 'test/cfr_correctness/%s.strategy' % game_name)
 
         print('\033[91mThis test needs your assistance! ' +
             'Check the generated graph %s!\033[0m' % figure_output_path)
