@@ -5,7 +5,7 @@ from tools.game_tree.node_provider import StrategyTreeNodeProvider
 from acpc_python_client.game_utils import generate_deck
 from tools.game_tree.nodes import HoleCardsNode, TerminalNode, StrategyActionNode, BoardCardsNode
 import numpy as np
-from tools.hand_evaluation import get_winners
+from tools.hand_evaluation import get_utility
 from tools.utils import flatten, intersection
 
 
@@ -40,24 +40,17 @@ class BestResponse:
 
         if isinstance(best_response_node, TerminalNode):
             parent_action = list(filter(lambda item: item[1] == best_response_node, best_response_node.parent.children.items()))[0][0]
+            players_folded = [False] * 2
             if parent_action == 0:
-                player_folded = best_response_node.parent.player
-                pot_amount = np.sum(best_response_node.pot_commitment)
-                return -best_response_node.pot_commitment[player_position] + \
-                    (pot_amount if player_position != player_folded else 0)
+                player_folded = 0 if best_response_node.parent.player == player_position else 1
+                players_folded[player_folded] = True
 
             player_value_sum = 0
             for state in player_states:
                 hands = [state[2], best_response_cards]
-                winners = get_winners(hands)
-                winner_count = len(winners)
-                pot_amount = np.sum(best_response_node.pot_commitment)
-                per_winner_value = pot_amount / winner_count
-                player_value = -best_response_node.pot_commitment[player_position] + \
-                    (per_winner_value if 0 in winners else 0)
-                player_value_sum += player_value * state[1]
+                player_utilities = get_utility(hands, board_cards, players_folded, best_response_node.pot_commitment)
+                player_value_sum += player_utilities[0] * state[1]
             return player_value_sum
-
 
         elif isinstance(best_response_node, HoleCardsNode):
             player_values_sum = 0
