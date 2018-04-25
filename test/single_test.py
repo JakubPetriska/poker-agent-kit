@@ -14,5 +14,5 @@ if __name__ == "__main__":
         print("Usage {test_name}")
         sys.exit(1)
 
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite(sys.argv[1]))
