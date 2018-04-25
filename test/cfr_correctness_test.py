@@ -25,8 +25,8 @@ class CfrCorrectnessTests(unittest.TestCase):
             'title': 'Kuhn Poker CFR trained strategy exploitability',
             'game_file_path': 'games/kuhn.limit.2p.game',
             'test_counts': 1,
-            'training_iterations': 20000,
-            'checkpoint_iterations': 50
+            'training_iterations': 1000,
+            'checkpoint_iterations': 10
         }
         self.train_and_show_results(kuhn_test_spec)
 
@@ -35,8 +35,8 @@ class CfrCorrectnessTests(unittest.TestCase):
             'title': 'Kuhn Bigdeck Poker CFR trained strategy exploitability',
             'game_file_path': 'games/kuhn.bigdeck.limit.2p.game',
             'test_counts': 1,
-            'training_iterations': 20000,
-            'checkpoint_iterations': 50
+            'training_iterations': 1000,
+            'checkpoint_iterations': 10
         }
         self.train_and_show_results(kuhn_bigdeck_test_spec)
 
@@ -45,8 +45,8 @@ class CfrCorrectnessTests(unittest.TestCase):
             'title': 'Kuhn Bigdeck 2round Poker CFR trained strategy exploitability',
             'game_file_path': 'games/kuhn.bigdeck.2round.limit.2p.game',
             'test_counts': 1,
-            'training_iterations': 200000,
-            'checkpoint_iterations': 1000
+            'training_iterations': 1000,
+            'checkpoint_iterations': 10
         }
         self.train_and_show_results(kuhn_bigdeck_2round_test_spec)
 
@@ -55,8 +55,8 @@ class CfrCorrectnessTests(unittest.TestCase):
             'title': 'Leduc Hold\'em Poker CFR trained strategy exploitability',
             'game_file_path': 'games/leduc.limit.2p.game',
             'test_counts': 1,
-            'training_iterations': 200000,
-            'checkpoint_iterations': 2000
+            'training_iterations': 1000,
+            'checkpoint_iterations': 10
         }
         self.train_and_show_results(leduc_test_spec)
 
