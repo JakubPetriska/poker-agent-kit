@@ -10,6 +10,7 @@ from tools.game_tree.nodes import ActionNode
 from tools.walk_tree import walk_tree
 
 KUHN_POKER_GAME_FILE_PATH = 'games/kuhn.limit.2p.game'
+KUHN_BIGDECK_2ROUND_POKER_GAME_FILE_PATH = 'games/kuhn.bigdeck.2round.limit.2p.game'
 LEDUC_POKER_GAME_FILE_PATH = 'games/leduc.limit.2p.game'
 
 
@@ -31,6 +32,24 @@ class BestResponseGameValueTests(unittest.TestCase):
 
     def test_kuhn_always_fold_value(self):
         game = acpc.read_game_file(KUHN_POKER_GAME_FILE_PATH)
+        strategy = GameTreeBuilder(game, StrategyTreeNodeProvider()).build_tree()
+
+        # Create strategy such that it will always check or fold
+        def on_node(node):
+            if isinstance(node, ActionNode):
+                if 0 in node.children:
+                    node.strategy[0] = 1
+                else:
+                    node.strategy[1] = 1
+        walk_tree(strategy, on_node)
+
+        best_response = BestResponse(game).solve(strategy)
+        game_values, player_positions = GameValue(game).evaluate(strategy, best_response)
+        self.assertEqual(game_values.tolist(), [[-1, 1], [1, -1]])
+        self.assertEqual(player_positions.tolist(), [[0, 1], [1, 0]])
+
+    def test_kuhn_bigdeck_2round_always_fold_value(self):
+        game = acpc.read_game_file(KUHN_BIGDECK_2ROUND_POKER_GAME_FILE_PATH)
         strategy = GameTreeBuilder(game, StrategyTreeNodeProvider()).build_tree()
 
         # Create strategy such that it will always check or fold
