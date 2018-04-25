@@ -6,8 +6,8 @@ blind = 1 1
 raiseSize = 1 2
 firstPlayer = 1 1
 maxRaises = 1 1
-numSuits = 1
-numRanks = 4
+numSuits = 2
+numRanks = 2
 numHoleCards = 1
 numBoardCards = 0 1
 END GAMEDEF
