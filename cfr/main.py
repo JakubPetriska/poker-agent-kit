@@ -10,7 +10,7 @@ from tools.constants import NUM_ACTIONS
 from tools.game_tree.builder import GameTreeBuilder
 from tools.game_tree.node_provider import NodeProvider
 from tools.game_tree.nodes import HoleCardsNode, TerminalNode, StrategyActionNode, BoardCardsNode
-from tools.hand_evaluation import get_winners
+from tools.hand_evaluation import get_utility
 from tools.game_utils import get_num_hole_card_combinations
 from tools.utils import is_unique, intersection
 
@@ -182,23 +182,7 @@ class Cfr:
             players_folded)
 
     def _cfr_terminal(self, nodes, hole_cards, board_cards, players_folded):
-        player_count = self.player_count
-        pot_commitment = nodes[0].pot_commitment
-
-        if sum(players_folded) == player_count - 1:
-            prize = sum(pot_commitment)
-            return [-pot_commitment[player] if players_folded[player] else prize - pot_commitment[player]
-                    for player in range(player_count)]
-
-        flattened_board_cards = reduce(
-            lambda res, cards: res + list(cards), board_cards, [])
-        player_cards = [(list(hole_cards[p]) + flattened_board_cards) if not players_folded[p] else None
-                        for p in range(player_count)]
-        winners = get_winners(player_cards)
-        winner_count = len(winners)
-        value_per_winner = sum(pot_commitment) / winner_count
-        return np.array([value_per_winner - pot_commitment[p] if p in winners else -pot_commitment[p]
-            for p in range(player_count)])
+        return get_utility(hole_cards, board_cards, players_folded, nodes[0].pot_commitment)
 
     def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
         hole_card_combination_probability = 1 / get_num_hole_card_combinations(self.game)
@@ -224,13 +208,14 @@ class Cfr:
 
         value_sums = np.zeros(self.player_count)
         for next_board_cards in possible_board_cards:
-            selected_board_cards = tuple(sorted(next_board_cards))
-            next_nodes = [node.children[selected_board_cards] for i, node in enumerate(nodes)]
+            selected_board_cards = sorted(next_board_cards)
+            selected_board_cards_key = tuple(selected_board_cards)
+            next_nodes = [node.children[selected_board_cards_key] for i, node in enumerate(nodes)]
             player_values = self._cfr(
                 next_nodes,
                 next_reach_probs,
                 hole_cards,
-                board_cards + [selected_board_cards],
+                board_cards + list(selected_board_cards),
                 players_folded)
             value_sums += player_values * board_cards_combination_probability
         return value_sums
