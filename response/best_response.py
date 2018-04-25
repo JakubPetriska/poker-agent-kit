@@ -48,7 +48,10 @@ class BestResponse:
             player_value_sum = 0
             for state in player_states:
                 hands = [state[2], best_response_cards]
-                player_utilities = get_utility(hands, board_cards, players_folded, best_response_node.pot_commitment)
+                pot_commitment = best_response_node.pot_commitment
+                if player_position == 1:
+                    pot_commitment = np.flip(pot_commitment, axis=0)
+                player_utilities = get_utility(hands, board_cards, players_folded, pot_commitment)
                 player_value_sum += player_utilities[0] * state[1]
             return player_value_sum
 
