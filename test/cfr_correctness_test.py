@@ -106,7 +106,7 @@ class CfrCorrectnessTests(unittest.TestCase):
                 plt.legend()
 
             game_name = test_spec['game_file_path'].split('/')[1][:-5]
-            figure_output_path = '%s/%s.png' % (FIGURES_FOLDER, game_name)
+            figure_output_path = '%s/%s(it:%s-st:%s).png' % (FIGURES_FOLDER, game_name, test_spec['training_iterations'], test_spec['checkpoint_iterations'])
 
             figures_directory = os.path.dirname(figure_output_path)
             if not os.path.exists(figures_directory):
@@ -114,7 +114,10 @@ class CfrCorrectnessTests(unittest.TestCase):
 
             plt.savefig(figure_output_path)
 
-            write_strategy_to_file(cfr.game_tree, 'test/cfr_correctness/%s.strategy' % game_name)
+            write_strategy_to_file(
+                cfr.game_tree,
+                'test/cfr_correctness/%s(it:%s).strategy' % (game_name, test_spec['training_iterations']),
+                ['# Game utility against best response: %s' % str(game_values.tolist())])
 
         print('\033[91mThis test needs your assistance! ' +
             'Check the generated graph %s!\033[0m' % figure_output_path)
@@ -134,4 +137,4 @@ def load_tests(loader, tests, pattern):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)
