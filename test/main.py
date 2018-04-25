@@ -4,14 +4,14 @@ from unittest import TestSuite
 from test.hand_evaluation_tests import HandEvaluationTests
 from test.exploitability_tests import ExploitabilityTests
 from test.cfr_tests import CfrTests
-from test.best_response_game_value_tests import BestResponseGameValueTests
+from test.best_response_player_utility_tests import BestResponsePlayerUtilityTests
 from test.utils_tests import UtilsTests
 from test.sampling_tests import SamplingTests
 
 test_classes = [
     HandEvaluationTests,
     ExploitabilityTests,
-    BestResponseGameValueTests,
+    BestResponsePlayerUtilityTests,
     UtilsTests,
     SamplingTests,
     CfrTests,

@@ -12,7 +12,7 @@ import acpc_python_client as acpc
 from cfr.main import Cfr
 from evaluation.exploitability import Exploitability
 from response.best_response import BestResponse
-from evaluation.game_value import GameValue
+from evaluation.player_utility import PlayerUtility
 
 from tools.output_util import write_strategy_to_file
 
@@ -86,8 +86,8 @@ class CfrCorrectnessTests(unittest.TestCase):
                 minimal_action_probability=0.00006)
 
             best_response = BestResponse(game).solve(cfr.game_tree)
-            game_values, _ = GameValue(game).evaluate(cfr.game_tree, best_response)
-            print(game_values.tolist())
+            player_utilities, _ = PlayerUtility(game).evaluate(cfr.game_tree, best_response)
+            print(player_utilities.tolist())
 
             plt.figure(dpi=160)
             for j in range(i + 1):
@@ -117,7 +117,7 @@ class CfrCorrectnessTests(unittest.TestCase):
             write_strategy_to_file(
                 cfr.game_tree,
                 'test/cfr_correctness/%s(it:%s).strategy' % (game_name, test_spec['training_iterations']),
-                ['# Game utility against best response: %s' % str(game_values.tolist())])
+                ['# Game utility against best response: %s' % str(player_utilities.tolist())])
 
         print('\033[91mThis test needs your assistance! ' +
             'Check the generated graph %s!\033[0m' % figure_output_path)
