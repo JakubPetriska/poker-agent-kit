@@ -23,7 +23,7 @@ except ImportError:
 class CfrActionNode(StrategyActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
-        self.training_strategy = np.zeros(NUM_ACTIONS)
+        self.current_strategy = np.zeros(NUM_ACTIONS)
         self.regret_sum = np.zeros(NUM_ACTIONS)
         self.strategy_sum = np.zeros(NUM_ACTIONS)
 
@@ -36,7 +36,7 @@ class CfrNodeProvider(NodeProvider):
 class Cfr:
     """Creates new ACPC poker using CFR algorithm which runs for specified number of iterations.
 
-    !!! Currently only limit betting games and games with up to 5 cards total are supported !!!
+    !!! Currently only limit betting games with up to 5 cards total and 2 players are supported !!!
     """
 
     def __init__(self, game, show_progress=True):
@@ -225,23 +225,23 @@ class Cfr:
         """Update node strategy by normalizing regret sums."""
         normalizing_sum = 0
         for a in node.children:
-            node.training_strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
-            normalizing_sum += node.training_strategy[a]
+            node.current_strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
+            normalizing_sum += node.current_strategy[a]
 
         num_possible_actions = len(node.children)
         for a in node.children:
             if normalizing_sum > 0:
-                node.training_strategy[a] /= normalizing_sum
+                node.current_strategy[a] /= normalizing_sum
             else:
-                node.training_strategy[a] = 1.0 / num_possible_actions
-            node.strategy_sum[a] += realization_weight * node.training_strategy[a]
+                node.current_strategy[a] = 1.0 / num_possible_actions
+            node.strategy_sum[a] += realization_weight * node.current_strategy[a]
 
     def _cfr_action(self, nodes, reach_probs,
                     hole_cards, board_cards, players_folded):
         node_player = nodes[0].player
         node = nodes[node_player]
         Cfr._update_node_strategy(node, reach_probs[node_player])
-        strategy = node.training_strategy
+        strategy = node.current_strategy
         util = [None] * NUM_ACTIONS
         node_util = np.zeros(self.player_count)
         for a in node.children:
