@@ -20,6 +20,9 @@ except ImportError:
     pass
 
 
+PLAYER_COUNT = 2
+
+
 class CfrActionNode(StrategyActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
@@ -73,11 +76,9 @@ class Cfr:
             except NameError:
                 self.game_tree = game_tree_builder.build_tree()
 
-        self.player_count = game.get_num_players()
-
     @staticmethod
     def _calculate_node_average_strategy(node, minimal_action_probability):
-        normalizing_sum = sum(node.strategy_sum)
+        normalizing_sum = np.sum(node.strategy_sum)
         if normalizing_sum > 0:
             node.strategy = np.array(node.strategy_sum) / normalizing_sum
             if minimal_action_probability:
@@ -149,11 +150,11 @@ class Cfr:
 
     def _start_iteration(self):
         self._cfr(
-            [self.game_tree] * self.player_count,
-            np.ones(self.player_count),
+            [self.game_tree] * PLAYER_COUNT,
+            np.ones(PLAYER_COUNT),
             None,
             [],
-            [False] * self.player_count)
+            [False] * PLAYER_COUNT)
 
     def _cfr(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
         node_type = type(nodes[0])
@@ -190,7 +191,7 @@ class Cfr:
     def _cfr_hole_cards(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
         hole_card_combination_probability = 1 / get_num_hole_card_combinations(self.game)
         next_reach_probs = reach_probs * hole_card_combination_probability
-        value_sums = np.zeros(self.player_count)
+        value_sums = np.zeros(PLAYER_COUNT)
         hole_cards = [node.children for node in nodes]
         hole_card_combinations = filter(lambda comb: is_unique(*comb), itertools.product(*hole_cards))
         for hole_cards_combination in hole_card_combinations:
@@ -209,7 +210,7 @@ class Cfr:
         board_cards_combination_probability = 1 / len(possible_board_cards)
         next_reach_probs = reach_probs * board_cards_combination_probability
 
-        value_sums = np.zeros(self.player_count)
+        value_sums = np.zeros(PLAYER_COUNT)
         for next_board_cards in possible_board_cards:
             selected_board_cards = sorted(next_board_cards)
             selected_board_cards_key = tuple(selected_board_cards)
@@ -231,13 +232,14 @@ class Cfr:
             node.current_strategy[a] = node.regret_sum[a] if node.regret_sum[a] > 0 else 0
             normalizing_sum += node.current_strategy[a]
 
-        num_possible_actions = len(node.children)
-        for a in node.children:
-            if normalizing_sum > 0:
-                node.current_strategy[a] /= normalizing_sum
-            else:
-                node.current_strategy[a] = 1.0 / num_possible_actions
-            node.strategy_sum[a] += realization_weight * node.current_strategy[a]
+        if normalizing_sum > 0:
+            node.current_strategy /= normalizing_sum
+        else:
+            action_probability = 1 / len(node.children)
+            for a in node.children:
+                node.current_strategy[a] = action_probability
+
+        node.strategy_sum += realization_weight * node.current_strategy
 
     def _get_current_strategy(self, nodes):
         return nodes[nodes[0].player].current_strategy
@@ -248,8 +250,8 @@ class Cfr:
         node = nodes[node_player]
         Cfr._update_node_strategy(node, reach_probs[node_player])
         current_strategy = self._get_current_strategy(nodes)
-        util = [None] * NUM_ACTIONS
-        node_util = np.zeros(self.player_count)
+        util = np.zeros([NUM_ACTIONS, PLAYER_COUNT])
+        node_util = np.zeros(PLAYER_COUNT)
         for a in node.children:
             next_reach_probs =  np.copy(reach_probs)
             next_reach_probs[node_player] *= current_strategy[a]
@@ -266,20 +268,10 @@ class Cfr:
                 hole_cards,
                 board_cards,
                 next_players_folded)
-            util[a] = action_util
-            for player in range(self.player_count):
-                node_util[player] += current_strategy[a] * action_util[player]
+            util[a, :] = action_util
+            node_util += current_strategy[a] * action_util
 
-        for a in node.children:
-            # Calculate regret and add it to regret sums
-            regret = util[a][node_player] - node_util[node_player]
-
-            # TODO use this to adapt the algo for more than 2 players
-            # opponent_reach_probs = np.concatenate([
-            #     reach_probs[0:node_player],
-            #     reach_probs[node_player + 1:]])
-            # node.regret_sum[a] += regret * np.prod(opponent_reach_probs)
-
-            node.regret_sum[a] += regret * reach_probs[(node_player + 1) % 2]
+        regret = util[:, node_player] - node_util[node_player]
+        node.regret_sum += regret * reach_probs[(node_player + 1) % 2]
 
         return node_util

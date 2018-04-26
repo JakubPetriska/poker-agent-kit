@@ -1,16 +1,18 @@
+import numpy as np
+
 from tools.constants import NUM_ACTIONS
 
 
 def _tree_str_rec(root, offset):
     result = '%s%s\n' % (' ' * offset, root)
-    for key, item in root.children.items():
+    for _, item in root.children.items():
         result += _tree_str_rec(item, offset + 1)
     return result
 
 
 def tree_str(root):
     result = ''
-    for key, item in root.children.items():
+    for _, item in root.children.items():
         result += _tree_str_rec(item, 0)
     return result
 
@@ -74,4 +76,4 @@ class ActionNode(Node):
 class StrategyActionNode(ActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
-        self.strategy = [0] * NUM_ACTIONS
+        self.strategy = np.zeros(NUM_ACTIONS)

@@ -1,5 +1,6 @@
 import copy
 import itertools
+import numpy as np
 
 import acpc_python_client as acpc
 
@@ -105,7 +106,7 @@ class GameTreeBuilder:
                 self._generate_board_cards_node(parent, child_key, next_game_state)
             else:
                 # This game tree branch ended, close it with terminal node
-                new_node = self.node_provider.create_terminal_node(parent, pot_commitment)
+                new_node = self.node_provider.create_terminal_node(parent, np.array(pot_commitment))
                 parent.children[child_key] = new_node
             return
 

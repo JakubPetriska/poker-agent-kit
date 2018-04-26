@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from cfr.main import Cfr
+from cfr.main import Cfr, PLAYER_COUNT
 
 
 class DataBiasedResponse(Cfr):
@@ -17,11 +17,11 @@ class DataBiasedResponse(Cfr):
 
     def _start_iteration(self):
         self._cfr(
-            ([self.game_tree] * self.player_count) + [self.opponent_sample_tree],
-            np.ones(self.player_count),
+            ([self.game_tree] * PLAYER_COUNT) + [self.opponent_sample_tree],
+            np.ones(PLAYER_COUNT),
             None,
             [],
-            [False] * self.player_count)
+            [False] * PLAYER_COUNT)
 
     def _get_current_strategy(self, nodes):
         samples_node = nodes[-1]
