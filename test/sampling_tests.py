@@ -24,9 +24,9 @@ class SamplingTests(unittest.TestCase):
                 callback_was_called_at_least_once = True
 
                 if data:
-                    self.assertEqual(node.action_decision_counts, [0, 1, 0])
+                    self.assertTrue(np.all(node.action_decision_counts == [0, 1, 0]))
                 else:
-                    self.assertEqual(node.action_decision_counts, [0, 0, 0])
+                    self.assertTrue(np.all(node.action_decision_counts == [0, 0, 0]))
 
                 return [data if action == 1 else False for action in node.children]
             elif isinstance(node, HoleCardsNode):

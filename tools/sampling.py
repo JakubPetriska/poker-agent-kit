@@ -1,3 +1,5 @@
+import numpy as np
+
 import acpc_python_client as acpc
 
 from tools.game_tree.builder import GameTreeBuilder
@@ -115,7 +117,7 @@ def _add_state_to_sample_trees(
 class SamplesActionNode(ActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
-        self.action_decision_counts = [0] * NUM_ACTIONS
+        self.action_decision_counts = np.zeros(NUM_ACTIONS, dtype=np.uint16)
 
 
 class SamplesTreeNodeProvider(NodeProvider):
