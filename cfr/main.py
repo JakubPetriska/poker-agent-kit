@@ -138,12 +138,7 @@ class Cfr:
         iterations_left_to_checkpoint = checkpoint_iterations
         checkpoint_index = 0
         for i in iterations_iterable:
-            self._cfr(
-                [self.game_tree] * self.player_count,
-                np.ones(self.player_count),
-                None,
-                [],
-                [False] * self.player_count)
+            self._start_iteration()
             iterations_left_to_checkpoint -= 1
 
             if iterations_left_to_checkpoint == 0 or i == iterations - 1:
@@ -151,6 +146,14 @@ class Cfr:
                 checkpoint_callback(self.game_tree, checkpoint_index, i + 1)
                 checkpoint_index += 1
                 iterations_left_to_checkpoint = checkpoint_iterations
+
+    def _start_iteration(self):
+        self._cfr(
+            [self.game_tree] * self.player_count,
+            np.ones(self.player_count),
+            None,
+            [],
+            [False] * self.player_count)
 
     def _cfr(self, nodes, reach_probs, hole_cards, board_cards, players_folded):
         node_type = type(nodes[0])
@@ -236,17 +239,20 @@ class Cfr:
                 node.current_strategy[a] = 1.0 / num_possible_actions
             node.strategy_sum[a] += realization_weight * node.current_strategy[a]
 
+    def _get_current_strategy(self, nodes):
+        return nodes[nodes[0].player].current_strategy
+
     def _cfr_action(self, nodes, reach_probs,
                     hole_cards, board_cards, players_folded):
         node_player = nodes[0].player
         node = nodes[node_player]
         Cfr._update_node_strategy(node, reach_probs[node_player])
-        strategy = node.current_strategy
+        current_strategy = self._get_current_strategy(nodes)
         util = [None] * NUM_ACTIONS
         node_util = np.zeros(self.player_count)
         for a in node.children:
             next_reach_probs =  np.copy(reach_probs)
-            next_reach_probs[node_player] *= strategy[a]
+            next_reach_probs[node_player] *= current_strategy[a]
 
             if a == 0:
                 next_players_folded = list(players_folded)
@@ -262,7 +268,7 @@ class Cfr:
                 next_players_folded)
             util[a] = action_util
             for player in range(self.player_count):
-                node_util[player] += strategy[a] * action_util[player]
+                node_util[player] += current_strategy[a] * action_util[player]
 
         for a in node.children:
             # Calculate regret and add it to regret sums

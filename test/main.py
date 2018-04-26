@@ -7,6 +7,7 @@ from test.cfr_tests import CfrTests
 from test.best_response_player_utility_tests import BestResponsePlayerUtilityTests
 from test.utils_tests import UtilsTests
 from test.sampling_tests import SamplingTests
+from test.data_biased_response_tests import DataBiasedResponseTests
 
 test_classes = [
     HandEvaluationTests,
@@ -15,6 +16,7 @@ test_classes = [
     UtilsTests,
     SamplingTests,
     CfrTests,
+    DataBiasedResponseTests,
 ]
 
 
