@@ -88,6 +88,8 @@ class CfrCorrectnessTests(unittest.TestCase):
             best_response = BestResponse(game).solve(cfr.game_tree)
             player_utilities, _ = PlayerUtility(game).evaluate(cfr.game_tree, best_response)
             print(player_utilities.tolist())
+            print('Exploitability: %s' % exploitability.evaluate(cfr.game_tree))
+            print('Minimum exploitability: %s' % exploitability_values.min())
 
             plt.figure(dpi=160)
             for j in range(i + 1):
