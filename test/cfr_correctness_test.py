@@ -13,10 +13,15 @@ from cfr.main import Cfr
 from evaluation.exploitability import Exploitability
 from response.best_response import BestResponse
 from evaluation.player_utility import PlayerUtility
+from tools.game_tree.builder import GameTreeBuilder
+from tools.game_tree.node_provider import StrategyTreeNodeProvider
+from tools.game_utils import copy_strategy, is_correct_strategy
 
 from tools.output_util import write_strategy_to_file
 
 FIGURES_FOLDER = 'test/cfr_correctness'
+COLLECT_MIN_EXPLOITABILITY = True
+CHECK_STRATEGY_CORRECTNESS = True
 
 
 class CfrCorrectnessTests(unittest.TestCase):
@@ -69,14 +74,27 @@ class CfrCorrectnessTests(unittest.TestCase):
             test_spec['training_iterations'] / test_spec['checkpoint_iterations'])
         iteration_counts = np.zeros(checkpoints_count)
         exploitability_values = np.zeros([test_spec['test_counts'], checkpoints_count])
+        best_exploitability = float("inf")
+        best_exploitability_strategy = GameTreeBuilder(game, StrategyTreeNodeProvider()).build_tree()
 
         for i in range(test_spec['test_counts']):
             print('%s/%s' % (i + 1, test_spec['test_counts']))
 
             def checkpoint_callback(game_tree, checkpoint_index, iterations):
+                nonlocal best_exploitability
+                nonlocal best_exploitability_strategy
+
                 if i == 0:
                     iteration_counts[checkpoint_index] = iterations
-                exploitability_values[i, checkpoint_index] = exploitability.evaluate(game_tree)
+
+                if CHECK_STRATEGY_CORRECTNESS:
+                    self.assertTrue(is_correct_strategy(game_tree))
+
+                exploitability_value = exploitability.evaluate(game_tree)
+                exploitability_values[i, checkpoint_index] = exploitability_value
+                if COLLECT_MIN_EXPLOITABILITY and exploitability_value < best_exploitability:
+                    best_exploitability = exploitability_value
+                    copy_strategy(best_exploitability_strategy, game_tree)
 
             cfr = Cfr(game)
             cfr.train(
@@ -89,7 +107,16 @@ class CfrCorrectnessTests(unittest.TestCase):
             player_utilities, _ = PlayerUtility(game).evaluate(cfr.game_tree, best_response)
             print(player_utilities.tolist())
             print('Exploitability: %s' % exploitability.evaluate(cfr.game_tree))
-            print('Minimum exploitability: %s' % exploitability_values.min())
+
+            if COLLECT_MIN_EXPLOITABILITY:
+                min_exploitability = exploitability.evaluate(best_exploitability_strategy)
+                min_exploitability_best_response = BestResponse(game).solve(best_exploitability_strategy)
+                min_exploitability_player_utilities, _ = PlayerUtility(game).evaluate(best_exploitability_strategy, min_exploitability_best_response)
+                self.assertEqual(min_exploitability, exploitability_values.min())
+                print('Minimum exploitability: %s' % min_exploitability)
+                print('Minimum exploitability player utilities: %s' % min_exploitability_player_utilities.tolist())
+            else:
+                print('Minimum exploitability: %s' % exploitability_values.min())
 
             plt.figure(dpi=160)
             for j in range(i + 1):
@@ -119,7 +146,7 @@ class CfrCorrectnessTests(unittest.TestCase):
             write_strategy_to_file(
                 cfr.game_tree,
                 'test/cfr_correctness/%s(it:%s).strategy' % (game_name, test_spec['training_iterations']),
-                ['# Game utility against best response: %s' % str(player_utilities.tolist())])
+                ['# Game utility against best response: %s' % player_utilities.tolist()])
 
         print('\033[91mThis test needs your assistance! ' +
             'Check the generated graph %s!\033[0m' % figure_output_path)
