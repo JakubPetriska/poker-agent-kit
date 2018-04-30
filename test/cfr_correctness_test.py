@@ -17,7 +17,7 @@ from tools.game_tree.builder import GameTreeBuilder
 from tools.game_tree.node_provider import StrategyTreeNodeProvider
 from tools.game_utils import copy_strategy, is_correct_strategy
 
-from tools.output_util import write_strategy_to_file
+from tools.io_util import write_strategy_to_file
 
 FIGURES_FOLDER = 'test/cfr_correctness'
 COLLECT_MIN_EXPLOITABILITY = True

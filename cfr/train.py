@@ -10,7 +10,7 @@ except ImportError:
 
 from cfr.main import Cfr
 from tools.game_tree.nodes import HoleCardsNode, ActionNode, BoardCardsNode
-from tools.output_util import get_strategy_lines
+from tools.io_util import get_strategy_lines
 
 """Trains strategy for poker agent using CFR algorithm and writes it to specified file.
 

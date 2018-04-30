@@ -18,7 +18,7 @@ from tools.game_tree.node_provider import StrategyTreeNodeProvider
 from tools.game_tree.nodes import ActionNode
 from tools.walk_tree import walk_tree_with_data
 from tools.game_utils import is_correct_strategy
-from tools.output_util import write_strategy_to_file
+from tools.io_util import write_strategy_to_file
 
 
 FIGURES_FOLDER = 'test/dbr_correctness'
