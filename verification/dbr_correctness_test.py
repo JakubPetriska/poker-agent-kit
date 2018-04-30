@@ -21,12 +21,12 @@ from tools.game_utils import is_correct_strategy
 from tools.io_util import write_strategy_to_file
 
 
-FIGURES_FOLDER = 'test/dbr_correctness'
+FIGURES_FOLDER = 'verification/dbr_correctness'
 P_MAX_VALUES = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]
 
 
 class DbrCorrectnessTests(unittest.TestCase):
-    def test_kuhn_cfr_correctness(self):
+    def test_kuhn_dbr_correctness(self):
         kuhn_test_spec = {
             'title': 'Kuhn Poker DBR strategy performance',
             'game_file_path': 'games/kuhn.limit.2p.game',

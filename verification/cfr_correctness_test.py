@@ -19,7 +19,7 @@ from tools.game_utils import copy_strategy, is_correct_strategy
 
 from tools.io_util import write_strategy_to_file
 
-FIGURES_FOLDER = 'test/cfr_correctness'
+FIGURES_FOLDER = 'verification/cfr_correctness'
 COLLECT_MIN_EXPLOITABILITY = True
 CHECK_STRATEGY_CORRECTNESS = True
 
