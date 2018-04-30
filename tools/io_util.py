@@ -1,5 +1,11 @@
 import os
+import numpy as np
 
+import acpc_python_client as acpc
+
+from tools.game_tree.builder import GameTreeBuilder
+from tools.game_tree.node_provider import StrategyTreeNodeProvider
+from tools.walk_trees import walk_trees
 from tools.game_tree.nodes import HoleCardsNode, ActionNode, BoardCardsNode
 
 
@@ -36,6 +42,7 @@ def get_strategy_lines(tree):
     get_strategy(tree, process_node_strategy)
     return strategy_lines
 
+
 def write_strategy_to_file(tree, output_path, prefix_lines=None):
     output_directory = os.path.dirname(output_path)
     if output_directory and not os.path.exists(output_directory):
@@ -50,3 +57,25 @@ def write_strategy_to_file(tree, output_path, prefix_lines=None):
                 file.write(line_with_newline)
         for line in sorted(get_strategy_lines(tree)):
             file.write(line)
+
+
+def read_strategy_from_file(game_file_path, strategy_file_path):
+    strategy = {}
+    with open(strategy_file_path, 'r') as strategy_file:
+        for line in strategy_file:
+            if not line.strip() or line.strip().startswith('#'):
+                continue
+            line_split = line.split(' ')
+            strategy[line_split[0]] = [float(probStr) for probStr in line_split[1:4]]
+
+    game = acpc.read_game_file(game_file_path)
+    strategy_tree = GameTreeBuilder(game, StrategyTreeNodeProvider()).build_tree()
+
+    def on_node(node):
+        if isinstance(node, ActionNode):
+            nonlocal strategy
+            node_strategy = np.array(strategy[str(node)])
+            np.copyto(node.strategy, node_strategy)
+
+    walk_trees(on_node, strategy_tree)
+    return strategy_tree
