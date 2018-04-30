@@ -16,7 +16,7 @@ from tools.game_tree.builder import GameTreeBuilder
 from tools.sampling import SamplesTreeNodeProvider
 from tools.game_tree.node_provider import StrategyTreeNodeProvider
 from tools.game_tree.nodes import ActionNode
-from tools.walk_tree import walk_tree_with_data
+from tools.walk_trees import walk_trees
 from tools.game_utils import is_correct_strategy
 from tools.io_util import write_strategy_to_file
 
@@ -87,8 +87,7 @@ class DbrCorrectnessTests(unittest.TestCase):
                 else:
                     for a in strategy_node.children:
                         strategy_node.strategy[a] = 1 / len(strategy_node.children)
-            return [strategy_node.children[a] for a in samples_node.children]
-        walk_tree_with_data(weak_opponent_samples_tree, weak_opponent_strategy_tree, on_node)
+        walk_trees(on_node, weak_opponent_samples_tree, weak_opponent_strategy_tree)
 
         self.assertTrue(is_correct_strategy(weak_opponent_strategy_tree))
 

@@ -7,7 +7,7 @@ from evaluation.player_utility import PlayerUtility
 from tools.game_tree.builder import GameTreeBuilder
 from tools.game_tree.node_provider import StrategyTreeNodeProvider
 from tools.game_tree.nodes import ActionNode
-from tools.walk_tree import walk_tree
+from tools.walk_trees import walk_trees
 
 KUHN_POKER_GAME_FILE_PATH = 'games/kuhn.limit.2p.game'
 KUHN_BIGDECK_2ROUND_POKER_GAME_FILE_PATH = 'games/kuhn.bigdeck.2round.limit.2p.game'
@@ -23,7 +23,7 @@ class BestResponsePlayerUtilityTests(unittest.TestCase):
         def on_node(node):
             if isinstance(node, ActionNode):
                 node.strategy[1] = 1
-        walk_tree(strategy, on_node)
+        walk_trees(on_node, strategy)
 
         best_response = BestResponse(game).solve(strategy)
         player_utilities, player_positions = PlayerUtility(game).evaluate(strategy, best_response)
@@ -41,7 +41,7 @@ class BestResponsePlayerUtilityTests(unittest.TestCase):
                     node.strategy[0] = 1
                 else:
                     node.strategy[1] = 1
-        walk_tree(strategy, on_node)
+        walk_trees(on_node, strategy)
 
         best_response = BestResponse(game).solve(strategy)
         player_utilities, player_positions = PlayerUtility(game).evaluate(strategy, best_response)
@@ -59,7 +59,7 @@ class BestResponsePlayerUtilityTests(unittest.TestCase):
                     node.strategy[0] = 1
                 else:
                     node.strategy[1] = 1
-        walk_tree(strategy, on_node)
+        walk_trees(on_node, strategy)
 
         best_response = BestResponse(game).solve(strategy)
         player_utilities, player_positions = PlayerUtility(game).evaluate(strategy, best_response)
@@ -77,7 +77,7 @@ class BestResponsePlayerUtilityTests(unittest.TestCase):
                     node.strategy[0] = 1
                 else:
                     node.strategy[1] = 1
-        walk_tree(strategy, on_node)
+        walk_trees(on_node, strategy)
 
         best_response = BestResponse(game).solve(strategy)
         player_utilities, player_positions = PlayerUtility(game).evaluate(strategy, best_response)
@@ -92,7 +92,7 @@ class BestResponsePlayerUtilityTests(unittest.TestCase):
         def on_node(node):
             if isinstance(node, ActionNode):
                 node.strategy[1] = 1
-        walk_tree(strategy, on_node)
+        walk_trees(on_node, strategy)
 
         best_response = BestResponse(game).solve(strategy)
         player_utilities, player_positions = PlayerUtility(game).evaluate(strategy, best_response)
@@ -115,7 +115,7 @@ class BestResponsePlayerUtilityTests(unittest.TestCase):
                 action_probability = 1 / action_count
                 for a in node.children:
                     node.strategy[a] = action_probability
-        walk_tree(strategy, on_node)
+        walk_trees(on_node, strategy)
 
         best_response = BestResponse(game).solve(strategy)
         player_utilities, player_positions = PlayerUtility(game).evaluate(strategy, best_response)

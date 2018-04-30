@@ -3,7 +3,7 @@ import numpy as np
 import scipy.misc
 import scipy.special
 
-from tools.walk_tree import walk_tree, walk_tree_with_data
+from tools.walk_trees import walk_trees
 from tools.game_tree.nodes import ActionNode
 
 
@@ -27,7 +27,7 @@ def is_correct_strategy(strategy_tree):
             for i in range(3):
                 if i not in node.children and node.strategy[i] != 0:
                     correct = False
-    walk_tree(strategy_tree, on_node)
+    walk_trees(on_node, strategy_tree)
     return correct
 
 def copy_strategy(dst, src):
@@ -35,4 +35,4 @@ def copy_strategy(dst, src):
         if isinstance(dst_node, ActionNode):
             np.copyto(dst_node.strategy, src_node.strategy)
         return [src_node.children[a] for a in src_node.children]
-    walk_tree_with_data(dst, src, on_node)
+    walk_trees(on_node, dst, src)

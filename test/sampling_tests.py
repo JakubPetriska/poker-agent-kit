@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from tools.sampling import read_log_file
-from tools.walk_tree import walk_tree_with_data
+from tools.walk_trees import walk_trees_with_data
 from tools.game_tree.nodes import ActionNode, BoardCardsNode, HoleCardsNode
 
 LEDUC_POKER_GAME_FILE_PATH = 'games/leduc.limit.2p.game'
@@ -18,7 +18,7 @@ class SamplingTests(unittest.TestCase):
 
         callback_was_called_at_least_once = False
 
-        def node_callback(node, data):
+        def node_callback(data, node):
             nonlocal callback_was_called_at_least_once
             if isinstance(node, ActionNode):
                 callback_was_called_at_least_once = True
@@ -36,10 +36,9 @@ class SamplingTests(unittest.TestCase):
             else:
                 return [data for _ in node.children]
 
-
         for name in players:
             player_tree = players[name]
-            walk_tree_with_data(player_tree, True, node_callback)
+            walk_trees_with_data(node_callback, True, player_tree)
         self.assertTrue(callback_was_called_at_least_once)
 
     def test_log_parsing_to_sample_trees_performance(self):

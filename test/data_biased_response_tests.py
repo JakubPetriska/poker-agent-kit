@@ -6,7 +6,7 @@ import acpc_python_client as acpc
 from tools.game_tree.builder import GameTreeBuilder
 from tools.sampling import SamplesTreeNodeProvider
 from tools.game_tree.nodes import ActionNode
-from tools.walk_tree import walk_tree
+from tools.walk_trees import walk_trees
 from response.data_biased_response import DataBiasedResponse
 
 
@@ -25,7 +25,7 @@ class DataBiasedResponseTests(unittest.TestCase):
             if isinstance(node, ActionNode):
                 for a in node.children:
                     node.action_decision_counts[a] = random.randrange(15)
-        walk_tree(samples_game_tree, on_node)
+        walk_trees(on_node, samples_game_tree)
 
         dbr = DataBiasedResponse(game, samples_game_tree, show_progress=False)
         dbr.train(10)
@@ -40,7 +40,7 @@ class DataBiasedResponseTests(unittest.TestCase):
             if isinstance(node, ActionNode):
                 for a in node.children:
                     node.action_decision_counts[a] = random.randrange(15)
-        walk_tree(samples_game_tree, on_node)
+        walk_trees(on_node, samples_game_tree)
 
         dbr = DataBiasedResponse(game, samples_game_tree, show_progress=False)
         dbr.train(5)
