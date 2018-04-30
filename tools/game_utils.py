@@ -30,9 +30,22 @@ def is_correct_strategy(strategy_tree):
     walk_trees(on_node, strategy_tree)
     return correct
 
+
 def copy_strategy(dst, src):
     def on_node(dst_node, src_node):
         if isinstance(dst_node, ActionNode):
             np.copyto(dst_node.strategy, src_node.strategy)
         return [src_node.children[a] for a in src_node.children]
     walk_trees(on_node, dst, src)
+
+
+def is_strategies_equal(first, second):
+    equal = True
+    def on_node(first_node, second_node):
+        if isinstance(first_node, ActionNode):
+            for a in range(3):
+                if not isclose(first_node.strategy[a], second_node.strategy[a]):
+                    nonlocal equal
+                    equal = False
+    walk_trees(on_node, first, second)
+    return equal
