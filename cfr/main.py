@@ -105,6 +105,9 @@ class Cfr:
             for child in node.children.values():
                 Cfr._calculate_tree_average_strategy(child, minimal_action_probability)
 
+    def _get_algorithm_name(self):
+        return 'CFR'
+
     def train(
         self,
         iterations,
@@ -131,7 +134,7 @@ class Cfr:
         else:
             try:
                 iterations_iterable = tqdm(range(iterations))
-                iterations_iterable.set_description('CFR training')
+                iterations_iterable.set_description('%s training' % self._get_algorithm_name())
             except NameError:
                 iterations_iterable = range(iterations)
 

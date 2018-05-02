@@ -15,6 +15,9 @@ class DataBiasedResponse(Cfr):
         self.opponent_sample_tree = opponent_sample_tree
         self.p_max = p_max
 
+    def _get_algorithm_name(self):
+        return 'DBR'
+
     def _start_iteration(self, player):
         self._cfr(
             player,

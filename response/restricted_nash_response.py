@@ -15,6 +15,9 @@ class RestrictedNashResponse(Cfr):
         self.opponent_strategy_tree = opponent_strategy_tree
         self.p = p
 
+    def _get_algorithm_name(self):
+        return 'RNR'
+
     def _start_iteration(self, player):
         self.play_fix = random.random() <= self.p
         self._cfr(
