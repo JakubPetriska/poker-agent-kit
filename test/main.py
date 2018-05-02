@@ -9,6 +9,7 @@ from test.utils_tests import UtilsTests
 from test.sampling_tests import SamplingTests
 from test.data_biased_response_tests import DataBiasedResponseTests
 from test.weak_agents_tests import WeakAgentsTests
+from test.restricted_nash_response_tests import RnrTests
 
 test_classes = [
     HandEvaluationTests,
@@ -19,6 +20,7 @@ test_classes = [
     CfrTests,
     DataBiasedResponseTests,
     WeakAgentsTests,
+    RnrTests,
 ]
 
 
