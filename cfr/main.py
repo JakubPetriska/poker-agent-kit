@@ -158,6 +158,8 @@ class Cfr:
                 checkpoint_index += 1
                 iterations_left_to_checkpoint = checkpoint_iterations
 
+        return self.game_tree
+
     def _start_iteration(self, player):
         self._cfr(
             player,
