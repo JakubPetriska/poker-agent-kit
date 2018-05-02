@@ -29,7 +29,7 @@ class RnrTests(unittest.TestCase):
 
         rnr = RestrictedNashResponse(
             game, opponent_strategy, 0.5, show_progress=False)
-        rnr.train(5)
+        rnr.train(10, 5)
 
     def test_kuhn_bigdeck_rnr_works(self):
         game = acpc.read_game_file(KUHN_BIG_DECK_POKER_GAME_FILE_PATH)
@@ -45,7 +45,7 @@ class RnrTests(unittest.TestCase):
 
         rnr = RestrictedNashResponse(
             game, opponent_strategy, 0.5, show_progress=False)
-        rnr.train(5)
+        rnr.train(10, 5)
 
     def test_kuhn_bigdeck_2round_rnr_works(self):
         game = acpc.read_game_file(KUHN_BIG_DECK_2ROUND_POKER_GAME_FILE_PATH)
@@ -61,7 +61,7 @@ class RnrTests(unittest.TestCase):
 
         rnr = RestrictedNashResponse(
             game, opponent_strategy, 0.5, show_progress=False)
-        rnr.train(5)
+        rnr.train(10, 5)
 
     def test_leduc_rnr_works(self):
         game = acpc.read_game_file(LEDUC_POKER_GAME_FILE_PATH)
@@ -77,4 +77,4 @@ class RnrTests(unittest.TestCase):
 
         rnr = RestrictedNashResponse(
             game, opponent_strategy, 0.5, show_progress=False)
-        rnr.train(5)
+        rnr.train(10, 5)

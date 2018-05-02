@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from cfr.main import Cfr, PLAYER_COUNT
+from cfr.main import Cfr, NUM_PLAYERS
 
 
 class RestrictedNashResponse(Cfr):
@@ -15,14 +15,15 @@ class RestrictedNashResponse(Cfr):
         self.opponent_strategy_tree = opponent_strategy_tree
         self.p = p
 
-    def _start_iteration(self):
+    def _start_iteration(self, player):
         self.play_fix = random.random() <= self.p
         self._cfr(
-            ([self.game_tree] * PLAYER_COUNT) + [self.opponent_strategy_tree],
-            np.ones(PLAYER_COUNT),
+            player,
+            ([self.game_tree] * NUM_PLAYERS) + [self.opponent_strategy_tree],
             None,
             [],
-            [False] * PLAYER_COUNT)
+            [False] * NUM_PLAYERS,
+            1)
 
     def _get_current_strategy(self, nodes):
         opponent_strategy_node = nodes[-1]

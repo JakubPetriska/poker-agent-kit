@@ -21,6 +21,7 @@ class WeakAgentsTests(unittest.TestCase):
             TiltType.ADD,
             0.2,
             cfr_iterations=20,
+            cfr_weight_delay=2,
             show_progress=False)
         self.assertTrue(is_correct_strategy(strategy))
 
@@ -31,6 +32,7 @@ class WeakAgentsTests(unittest.TestCase):
             TiltType.ADD,
             0.1,
             cfr_iterations=5,
+            cfr_weight_delay=2,
             show_progress=False)
         self.assertTrue(is_correct_strategy(strategy))
 
@@ -41,6 +43,7 @@ class WeakAgentsTests(unittest.TestCase):
             TiltType.MULTIPLY,
             0.1,
             cfr_iterations=5,
+            cfr_weight_delay=2,
             show_progress=False)
         self.assertTrue(is_correct_strategy(strategy))
 

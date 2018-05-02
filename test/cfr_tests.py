@@ -14,22 +14,22 @@ class CfrTests(unittest.TestCase):
     def test_kuhn_cfr_works(self):
         game = acpc.read_game_file(KUHN_POKER_GAME_FILE_PATH)
         cfr = Cfr(game, show_progress=False)
-        cfr.train(5)
+        cfr.train(5, weight_delay=2)
 
     def test_kuhn_bigdeck_cfr_works(self):
         game = acpc.read_game_file(KUHN_BIG_DECK_POKER_GAME_FILE_PATH)
         cfr = Cfr(game, show_progress=False)
-        cfr.train(5)
+        cfr.train(5, weight_delay=2)
 
     def test_kuhn_bigdeck_2round_cfr_works(self):
         game = acpc.read_game_file(KUHN_BIG_DECK_2ROUND_POKER_GAME_FILE_PATH)
         cfr = Cfr(game, show_progress=False)
-        cfr.train(5)
+        cfr.train(5, weight_delay=2)
 
     def test_leduc_cfr_works(self):
         game = acpc.read_game_file(LEDUC_POKER_GAME_FILE_PATH)
         cfr = Cfr(game, show_progress=False)
-        cfr.train(5)
+        cfr.train(5, weight_delay=2)
 
     def test_kuhn_cfr_checkpointing(self):
         game = acpc.read_game_file(KUHN_POKER_GAME_FILE_PATH)
@@ -42,6 +42,6 @@ class CfrTests(unittest.TestCase):
             self.assertEqual(checkpoint_index, checkpoints_count)
             checkpoints_count += 1
 
-        cfr.train(60, 15, checkpoint_callback)
+        cfr.train(60, weight_delay=15, checkpoint_iterations=15, checkpoint_callback=checkpoint_callback)
 
-        self.assertEqual(checkpoints_count, 4)
+        self.assertEqual(checkpoints_count, 3)

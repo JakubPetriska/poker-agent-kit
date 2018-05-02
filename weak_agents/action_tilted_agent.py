@@ -21,12 +21,13 @@ def create_agent_strategy(
         tilt_action,
         tilt_type,
         tilt_probability,
-        cfr_iterations=20000,
+        cfr_iterations=2000,
+        cfr_weight_delay=700,
         show_progress=True):
 
     game = acpc.read_game_file(game_file_path)
     cfr = Cfr(game, show_progress=show_progress)
-    cfr.train(cfr_iterations)
+    cfr.train(cfr_iterations, cfr_weight_delay)
     return create_agent_strategy_from_trained_strategy(
         game_file_path,
         cfr.game_tree,

@@ -28,7 +28,7 @@ class DataBiasedResponseTests(unittest.TestCase):
         walk_trees(on_node, samples_game_tree)
 
         dbr = DataBiasedResponse(game, samples_game_tree, show_progress=False)
-        dbr.train(10)
+        dbr.train(10, 5)
 
     def test_leduc_data_biased_response_works(self):
         game = acpc.read_game_file(LEDUC_POKER_GAME_FILE_PATH)
@@ -43,4 +43,4 @@ class DataBiasedResponseTests(unittest.TestCase):
         walk_trees(on_node, samples_game_tree)
 
         dbr = DataBiasedResponse(game, samples_game_tree, show_progress=False)
-        dbr.train(5)
+        dbr.train(10, 5)
