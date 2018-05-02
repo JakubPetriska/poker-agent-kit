@@ -14,24 +14,30 @@ from tools.io_util import read_strategy_from_file
 from evaluation.exploitability import Exploitability
 
 
-FIGURES_FOLDER = 'verification/rnr'
+FIGURES_FOLDER = 'verification/rnr_correctness'
 
 KUHN_EQUILIBRIUM_STRATEGY_PATH = 'strategies/kuhn.limit.2p-equilibrium.strategy'
 LEDUC_EQUILIBRIUM_STRATEGY_PATH = 'strategies/leduc.limit.2p-equilibrium.strategy'
 
 
-class RnrVerificationTest(unittest.TestCase):
+class RnrCorrectnessTest(unittest.TestCase):
     def test_kuhn_rnr(self):
         self.train_and_show_results({
             'title': 'Restricted Nash Response agent exploitability',
             'game_file_path': 'games/kuhn.limit.2p.game',
             'base_strategy_path': KUHN_EQUILIBRIUM_STRATEGY_PATH,
             'opponent_tilt_types': [
-                ('FOLD-ADD-0.5', Action.FOLD, TiltType.ADD, 0.5),
-                ('CALL-ADD-0.5', Action.CALL, TiltType.ADD, 0.5),
-                ('RAISE-ADD-0.75', Action.RAISE, TiltType.ADD, 0.75),
+                ('FOLD-ADD-0.5-p=0.8', Action.FOLD, TiltType.ADD, 0.5, 0.8),
+                ('FOLD-ADD-0.5-p=0.5', Action.FOLD, TiltType.ADD, 0.5, 0.5),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, 0.2),
+                ('CALL-ADD-0.5-p=0.8', Action.CALL, TiltType.ADD, 0.5, 0.8),
+                ('CALL-ADD-0.5-p=0.5', Action.CALL, TiltType.ADD, 0.5, 0.5),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, 0.2),
+                ('RAISE-ADD-0.75p=0.8', Action.RAISE, TiltType.ADD, 0.75, 0.8),
+                ('RAISE-ADD-0.75p=0.5', Action.RAISE, TiltType.ADD, 0.75, 0.5),
+                ('RAISE-ADD-0.75p=0.2', Action.RAISE, TiltType.ADD, 0.75, 0.2),
             ],
-            'training_iterations': 1000,
+            'training_iterations': 3000,
             'checkpoint_iterations': 10,
         })
 
@@ -49,7 +55,7 @@ class RnrVerificationTest(unittest.TestCase):
         exploitability = Exploitability(game)
 
         checkpoints_count = math.ceil(
-            test_spec['training_iterations'] / test_spec['checkpoint_iterations'])
+            (test_spec['training_iterations'] - 700) / test_spec['checkpoint_iterations'])
         iteration_counts = np.zeros(checkpoints_count)
         exploitability_values = np.zeros([num_agents, checkpoints_count])
         for i, agent in enumerate(agents):
@@ -67,11 +73,11 @@ class RnrVerificationTest(unittest.TestCase):
                     agent[2],
                     agent[3])
 
-            rnr = RestrictedNashResponse(game, opponent_strategy, 0.5)
+            rnr = RestrictedNashResponse(game, opponent_strategy, agent[4])
             rnr.train(
                 test_spec['training_iterations'],
-                test_spec['checkpoint_iterations'],
-                checkpoint_callback)
+                checkpoint_iterations=test_spec['checkpoint_iterations'],
+                checkpoint_callback=checkpoint_callback)
 
             print('Exploitability: %s' % exploitability.evaluate(rnr.game_tree))
 
@@ -87,13 +93,13 @@ class RnrVerificationTest(unittest.TestCase):
             plt.xlabel('Training iterations')
             plt.ylabel('Strategy exploitability [mbb/g]')
             plt.grid()
-            plt.legend()
+            lgd = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
             game_name = test_spec['game_file_path'].split('/')[1][:-5]
-            figure_output_path = '%s/rnr-%s(it:%s-st:%s).png' % (FIGURES_FOLDER, game_name, test_spec['training_iterations'], test_spec['checkpoint_iterations'])
+            figure_output_path = '%s/%s(it:%s-st:%s).png' % (FIGURES_FOLDER, game_name, test_spec['training_iterations'], test_spec['checkpoint_iterations'])
 
             figures_directory = os.path.dirname(figure_output_path)
             if not os.path.exists(figures_directory):
                 os.makedirs(figures_directory)
 
-            plt.savefig(figure_output_path)
+            plt.savefig(figure_output_path, bbox_extra_artists=(lgd,), bbox_inches='tight')
