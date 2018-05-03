@@ -44,7 +44,7 @@ def create_agent_strategy_from_strategy_file(
         tilt_type,
         tilt_probability):
 
-    strategy_tree = read_strategy_from_file(game_file_path, strategy_path)
+    strategy_tree, _ = read_strategy_from_file(game_file_path, strategy_path)
     return create_agent_strategy_from_trained_strategy(
         game_file_path,
         strategy_tree,

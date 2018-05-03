@@ -78,4 +78,4 @@ def read_strategy_from_file(game_file_path, strategy_file_path):
             np.copyto(node.strategy, node_strategy)
 
     walk_trees(on_node, strategy_tree)
-    return strategy_tree
+    return strategy_tree, strategy

@@ -48,7 +48,7 @@ class WeakAgentsTests(unittest.TestCase):
         self.assertTrue(is_correct_strategy(strategy))
 
     def test_kuhn_action_tilted_agent(self):
-        kuhn_equilibrium = read_strategy_from_file(
+        kuhn_equilibrium, _ = read_strategy_from_file(
             KUHN_POKER_GAME_FILE_PATH,
             'strategies/kuhn.limit.2p-equilibrium.strategy')
 

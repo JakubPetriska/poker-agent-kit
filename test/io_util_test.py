@@ -28,5 +28,5 @@ class IoUtilTest(unittest.TestCase):
         walk_trees(on_node, strategy_tree)
 
         write_strategy_to_file(strategy_tree, 'test/io_test_dummy.strategy')
-        read_strategy_tree = read_strategy_from_file(KUHN_POKER_GAME_FILE_PATH, 'test/io_test_dummy.strategy')
+        read_strategy_tree, _ = read_strategy_from_file(KUHN_POKER_GAME_FILE_PATH, 'test/io_test_dummy.strategy')
         self.assertTrue(is_strategies_equal(strategy_tree, read_strategy_tree))

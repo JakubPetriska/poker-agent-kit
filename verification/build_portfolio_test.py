@@ -42,7 +42,7 @@ class BuildPortfolioTest(unittest.TestCase):
     def train_and_show_results(self, test_spec):
         game_file_path = test_spec['game_file_path']
 
-        base_strategy = read_strategy_from_file(
+        base_strategy, _ = read_strategy_from_file(
             game_file_path,
             test_spec['base_strategy_path'])
 
