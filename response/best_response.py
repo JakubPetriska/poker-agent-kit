@@ -7,6 +7,7 @@ from tools.game_tree.nodes import HoleCardsNode, TerminalNode, StrategyActionNod
 import numpy as np
 from tools.hand_evaluation import get_utility
 from tools.utils import flatten, intersection
+from tools.tree_utils import get_parent_action
 
 
 class BestResponse:
@@ -39,7 +40,7 @@ class BestResponse:
             board_cards):
 
         if isinstance(best_response_node, TerminalNode):
-            parent_action = list(filter(lambda item: item[1] == best_response_node, best_response_node.parent.children.items()))[0][0]
+            parent_action = get_parent_action(best_response_node)
             players_folded = [False] * 2
             if parent_action == 0:
                 player_folded = 0 if best_response_node.parent.player == player_position else 1
