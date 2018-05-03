@@ -264,6 +264,9 @@ class Cfr:
     def _get_current_strategy(self, nodes):
         return nodes[nodes[0].player].current_strategy
 
+    def _get_opponent_strategy(self, nodes):
+        return self._get_current_strategy(nodes)
+
     def _cfr_action(self, player, nodes, hole_cards, board_cards, players_folded, opponent_reach_prob):
         node_player = nodes[0].player
         node = nodes[node_player]
@@ -297,6 +300,9 @@ class Cfr:
         else:
             Cfr._regret_matching(nodes)
             current_strategy = self._get_current_strategy(nodes)
+            node.strategy_sum += opponent_reach_prob * current_strategy * self.weight
+
+            opponent_strategy = self._get_opponent_strategy(nodes)
             for a in node.children:
                 if a == 0:
                     next_players_folded = list(players_folded)
@@ -310,7 +316,6 @@ class Cfr:
                     hole_cards,
                     board_cards,
                     next_players_folded,
-                    opponent_reach_prob * current_strategy[a])
+                    opponent_reach_prob * opponent_strategy[a])
 
-            node.strategy_sum += opponent_reach_prob * current_strategy * self.weight
         return node_util

@@ -27,11 +27,11 @@ class DataBiasedResponse(Cfr):
             [False] * NUM_PLAYERS,
             1)
 
-    def _get_current_strategy(self, nodes):
+    def _get_opponent_strategy(self, nodes):
         samples_node = nodes[-1]
         samples_count = np.sum(samples_node.action_decision_counts)
         p_conf = self.p_max * min(1, samples_count / 10)
         if random.random() <= p_conf:
             return samples_node.action_decision_counts / samples_count
         else:
-            return super(DataBiasedResponse, self)._get_current_strategy(nodes)
+            return super(DataBiasedResponse, self)._get_opponent_strategy(nodes)

@@ -28,9 +28,9 @@ class RestrictedNashResponse(Cfr):
             [False] * NUM_PLAYERS,
             1)
 
-    def _get_current_strategy(self, nodes):
+    def _get_opponent_strategy(self, nodes):
         opponent_strategy_node = nodes[-1]
         if self.play_fix:
             return opponent_strategy_node.strategy
         else:
-            return super(RestrictedNashResponse, self)._get_current_strategy(nodes)
+            return super(RestrictedNashResponse, self)._get_opponent_strategy(nodes)
