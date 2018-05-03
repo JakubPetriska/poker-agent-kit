@@ -68,6 +68,9 @@ def read_strategy_from_file(game_file_path, strategy_file_path):
             line_split = line.split(' ')
             strategy[line_split[0]] = [float(probStr) for probStr in line_split[1:4]]
 
+    if not game_file_path:
+        return strategy
+
     game = acpc.read_game_file(game_file_path)
     strategy_tree = GameTreeBuilder(game, StrategyTreeNodeProvider()).build_tree()
 

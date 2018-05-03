@@ -8,6 +8,6 @@
 SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 WORKSPACE_DIR="${SCRIPT_DIR}/../../../"
 
-python "${WORKSPACE_DIR}/tools/strategy_agent.py" \
+PYTHONPATH="${PYTHONPATH}:${WORKSPACE_DIR}" python "${WORKSPACE_DIR}/tools/strategy_agent.py" \
   "${WORKSPACE_DIR}/games/$1.game" \
   $2 $3 $4
