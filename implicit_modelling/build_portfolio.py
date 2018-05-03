@@ -28,7 +28,7 @@ def build_portfolio(
     responses = []
     for i in range(num_opponents):
         current_rnr_params = rnr_params[i]
-        rnr = RestrictedNashResponse(game, opponent_strategy_trees[i], current_rnr_params[0])
+        rnr = RestrictedNashResponse(game, opponent_strategy_trees[i], current_rnr_params[0], show_progress=log)
         response_strategy = None
         if len(current_rnr_params) > 2:
             response_strategy = rnr.train(current_rnr_params[1], weight_delay=current_rnr_params[2])
