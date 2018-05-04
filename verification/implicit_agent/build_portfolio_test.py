@@ -14,7 +14,7 @@ from implicit_modelling.build_portfolio import build_portfolio
 from tools.io_util import write_strategy_to_file
 
 
-TEST_OUTPUT_DIRECTORY = 'verification/build_portfolio'
+TEST_OUTPUT_DIRECTORY = 'verification/implicit_agent/portfolios'
 
 KUHN_EQUILIBRIUM_STRATEGY_PATH = 'strategies/kuhn.limit.2p-equilibrium.strategy'
 LEDUC_EQUILIBRIUM_STRATEGY_PATH = 'strategies/leduc.limit.2p-equilibrium.strategy'
