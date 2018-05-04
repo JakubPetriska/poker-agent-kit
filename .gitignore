@@ -5,6 +5,7 @@
 *.err
 *.std
 *.log
+verification/implicit_agent/portfolios
 
 # Ignore whole .idea folder
 .idea

@@ -21,6 +21,17 @@ def convert_action_to_str(action):
         raise RuntimeError('Invalid action: %s' % action)
 
 
+def convert_action_to_int(action):
+    if action == acpc.ActionType.FOLD:
+        return 0
+    elif action == acpc.ActionType.CALL:
+        return 1
+    elif action == acpc.ActionType.RAISE:
+        return 2
+    else:
+        raise RuntimeError('Invalid action: %s' % action)
+
+
 def select_action(strategy):
     """Randomly select action from node strategy.
 
