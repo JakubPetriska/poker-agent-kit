@@ -15,7 +15,8 @@ def build_portfolio(
         rnr_params,
         portfolio_size=-1,
         portfolio_cut_improvement_threshold=0.05,
-        log=False):
+        log=False,
+        output_directory=None):
     if portfolio_size <= 0 \
         and not portfolio_cut_improvement_threshold or portfolio_cut_improvement_threshold <= 0:
         raise AttributeError('Either portfolio_size or portfolio_cut_improvement_threshold larger than 0 must be provided')
@@ -106,7 +107,11 @@ def build_portfolio(
         plt.xlabel('Portfolio size')
         plt.ylabel('Portfolio value [mbb/g]')
         plt.grid()
-        plt.show()
+
+        if output_directory:
+            plt.savefig('%s/portoflio_size_utility.png' % output_directory)
+        else:
+            plt.show()
 
     response_indices = response_added[:final_portfolio_size]
     return np.take(responses, response_indices), response_indices
