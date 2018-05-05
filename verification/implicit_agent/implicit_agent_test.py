@@ -6,7 +6,6 @@ import math
 import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
-from enum import Enum
 
 import acpc_python_client as acpc
 
@@ -16,6 +15,7 @@ from tools.io_util import read_strategy_from_file
 from implicit_modelling.build_portfolio import build_portfolio
 from tools.io_util import write_strategy_to_file
 from implicit_modelling.implicit_modelling_agent import ImplicitModellingAgent
+from tools.game_utils import get_big_blind_size
 
 
 TEST_DIRECTORY = 'verification/implicit_agent'
@@ -24,8 +24,6 @@ GAME_LOGS_DIRECTORY = '%s/logs' % TEST_DIRECTORY
 
 BASE_AGENT_SCRIPT_PATH = '%s/base_agent_script.sh' % TEST_DIRECTORY
 BASE_OPPONENT_SCRIPT_PATH = '%s/base_opponent_script.sh' % TEST_DIRECTORY
-
-EVALUATE_SCRIPT_PATH = './implicit_modelling/evaluate.sh'
 
 START_DEALER_AND_OPPONENT_SCRIPT_PATH = './scripts/start_dealer_and_other_players.sh'
 
@@ -47,6 +45,8 @@ AGENT_SCRIPT_REPLACE_STRINGS = [
 
 WARNING_COMMENT = 'This file is generated. Do not edit!'
 
+NUM_EVAL_HANDS = 3000
+
 
 def replace_in_file(filename, old_strings, new_strings):
     with open(filename) as f:
@@ -58,18 +58,11 @@ def replace_in_file(filename, old_strings, new_strings):
         f.write(s)
 
 
-class TestMode(Enum):
-    EVAL = 0
-    DEBUG = 1
-
-
 class ImplicitAgentTest(unittest.TestCase):
     def test_kuhn_simple_portfolio(self):
         self.evaluate_agent({
             'portfolio_name': 'kuhn_simple_portfolio',
             'game_file_path': 'games/kuhn.limit.2p.game',
-            'test_mode': TestMode.DEBUG,
-            # 'test_mode': TestMode.EVAL,
         })
 
     def evaluate_agent(self, test_spec):
@@ -77,6 +70,9 @@ class ImplicitAgentTest(unittest.TestCase):
         portfolio_directory = '%s/%s' % (PORTFOLIOS_DIRECTORY, portfolio_name)
 
         game_file_path = test_spec['game_file_path']
+        game = acpc.read_game_file(game_file_path)
+        if game.get_num_players() != 2:
+            raise AttributeError('Only games with 2 players are supported')
 
         anaconda_env_name = None
         if 'anaconda3/envs' in sys.executable:
@@ -139,34 +135,30 @@ class ImplicitAgentTest(unittest.TestCase):
             shutil.rmtree(logs_dir)
         os.makedirs(logs_dir)
 
-        test_mode = test_spec['test_mode']
+        big_blind_size = get_big_blind_size(game)
+
+        print()
         for i in range(portfolio_size):
             opponent_name = opponent_names[i]
             logs_path = '%s/%s' % (logs_dir, opponent_name)
 
-            if test_mode == TestMode.EVAL:
-                rc = subprocess.call([
-                    EVALUATE_SCRIPT_PATH,
+            proc = subprocess.Popen(
+                [
+                    START_DEALER_AND_OPPONENT_SCRIPT_PATH,
                     game_file_path,
                     logs_path,
-                    portfolio_name,
-                    agent_script_path,
                     opponent_name,
-                    opponent_script_paths[i]])
-                self.assertEqual(rc, 0)
-            elif test_mode == TestMode.DEBUG:
-                proc = subprocess.Popen(
-                    [
-                        START_DEALER_AND_OPPONENT_SCRIPT_PATH,
-                        game_file_path,
-                        logs_path,
-                        opponent_name,
-                        opponent_script_paths[i],
-                        portfolio_name],
-                    stdout=subprocess.PIPE)
-                port_number = proc.stdout.readline().decode('utf-8').strip()
+                    opponent_script_paths[i],
+                    portfolio_name],
+                stdout=subprocess.PIPE)
+            port_number = proc.stdout.readline().decode('utf-8').strip()
 
-                client = acpc.Client(game_file_path, '127.0.1.1', port_number)
+            client = acpc.Client(game_file_path, '127.0.1.1', port_number)
 
-                full_response_strategy_paths = ['%s/%s' % (portfolio_directory, s) for s in response_strategy_paths]
-                client.play(ImplicitModellingAgent(game_file_path, full_response_strategy_paths))
+            full_response_strategy_paths = ['%s/%s' % (portfolio_directory, s) for s in response_strategy_paths]
+            client.play(ImplicitModellingAgent(game_file_path, full_response_strategy_paths))
+
+            scores_line = proc.stdout.readline().decode('utf-8').strip()
+            agent_score = float(scores_line.split(':')[1].split('|')[1])
+            agent_score_mbb_per_game = (agent_score / NUM_EVAL_HANDS) * big_blind_size
+            print('%s vs %s: %s' % (portfolio_name, opponent_name, agent_score_mbb_per_game))

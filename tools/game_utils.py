@@ -49,3 +49,11 @@ def is_strategies_equal(first, second):
                     equal = False
     walk_trees(on_node, first, second)
     return equal
+
+def get_big_blind_size(game):
+    big_blind = None
+    for i in range(game.get_num_players()):
+        player_blind = game.get_blind(i)
+        if big_blind == None or player_blind > big_blind:
+            big_blind = player_blind
+    return big_blind
