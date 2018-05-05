@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import acpc_python_client as acpc
 
-from response.restricted_nash_response import RestrictedNashResponse
+from response.rnr_parameter_optimizer import RnrParameterOptimizer
 from evaluation.exploitability import Exploitability
 from tools.game_utils import is_strategies_equal
 
@@ -29,12 +29,17 @@ def build_portfolio(
     responses = []
     for i in range(num_opponents):
         current_rnr_params = rnr_params[i]
-        rnr = RestrictedNashResponse(game, opponent_strategy_trees[i], current_rnr_params[0], show_progress=log)
-        response_strategy = None
+        exploitability = current_rnr_params[0]
+        exploitability_max_delta = current_rnr_params[1]
+        rnr_args = { 'show_progress': log }
         if len(current_rnr_params) > 2:
-            response_strategy = rnr.train(current_rnr_params[1], weight_delay=current_rnr_params[2])
-        else:
-            response_strategy = rnr.train(current_rnr_params[1])
+            rnr_args['iterations'] = current_rnr_params[2]
+        if len(current_rnr_params) > 3:
+            rnr_args['checkpoint_iterations'] = current_rnr_params[3]
+        if len(current_rnr_params) > 4:
+            rnr_args['weigth_delay'] = current_rnr_params[4]
+        rnr = RnrParameterOptimizer(game, **rnr_args)
+        response_strategy, _, _ = rnr.train(opponent_strategy_trees[i], exploitability, exploitability_max_delta)
         responses += [response_strategy]
 
     utilities = np.zeros([num_opponents, num_opponents])

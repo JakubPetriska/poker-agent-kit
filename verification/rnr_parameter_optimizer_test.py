@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 import acpc_python_client as acpc
 
-from response.restricted_nash_response import RestrictedNashResponse
 from cfr.main import Cfr
 from tools.constants import Action
 from weak_agents.action_tilted_agent import create_agent_strategy_from_trained_strategy, TiltType

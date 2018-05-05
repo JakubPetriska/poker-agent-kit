@@ -47,6 +47,6 @@ class ImplicitAgentTests(unittest.TestCase):
         portfolio_strategies, opponent_indices = build_portfolio(
             KUHN_POKER_GAME_FILE_PATH,
             opponents,
-            [(0.1, 10, 5)] * len(opponents))
+            [(100, 800, 10, 2, 2)] * len(opponents))
         self.assertGreaterEqual(len(portfolio_strategies), 1)
         self.assertEqual(len(portfolio_strategies), len(opponent_indices))

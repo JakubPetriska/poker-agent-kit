@@ -11,10 +11,12 @@ class RnrParameterOptimizer():
             game,
             iterations=1500,
             checkpoint_iterations=10,
+            weigth_delay=None,
             show_progress=True):
         self.game = game
         self.iterations = iterations
         self.checkpoint_iterations = checkpoint_iterations
+        self.weight_delay = weigth_delay
         self.show_progress = show_progress
         self.exp = Exploitability(game)
 
@@ -63,10 +65,17 @@ class RnrParameterOptimizer():
                 opponent_strategy,
                 p_current,
                 show_progress=self.show_progress)
-            rnr.train(
-                self.iterations,
-                checkpoint_iterations=self.checkpoint_iterations,
-                checkpoint_callback=checkpoint_callback)
+            if self.weight_delay:
+                rnr.train(
+                    self.iterations,
+                    checkpoint_iterations=self.checkpoint_iterations,
+                    checkpoint_callback=checkpoint_callback,
+                    weight_delay=self.weight_delay)
+            else:
+                rnr.train(
+                    self.iterations,
+                    checkpoint_iterations=self.checkpoint_iterations,
+                    checkpoint_callback=checkpoint_callback)
 
             if best_exploitability_delta < max_exploitability_delta:
                 return result_strategy, best_exploitability, p_current
