@@ -16,6 +16,8 @@ from implicit_modelling.build_portfolio import build_portfolio
 from tools.io_util import write_strategy_to_file
 from implicit_modelling.implicit_modelling_agent import ImplicitModellingAgent
 from tools.game_utils import get_big_blind_size
+from implicit_modelling.utility_estimation.simple import SimpleUtilityEstimator
+from implicit_modelling.utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
 
 
 TEST_DIRECTORY = 'verification/implicit_agent'
@@ -32,6 +34,14 @@ class ImplicitAgentTest(unittest.TestCase):
         self.evaluate_agent({
             'portfolio_name': 'kuhn_simple_portfolio',
             'game_file_path': 'games/kuhn.limit.2p.game',
+            'utility_estimator_class': SimpleUtilityEstimator,
+        })
+
+    def test_kuhn_simple_portfolio_imaginary_observations(self):
+        self.evaluate_agent({
+            'portfolio_name': 'kuhn_simple_portfolio',
+            'game_file_path': 'games/kuhn.limit.2p.game',
+            'utility_estimator_class': ImaginaryObservationsUtilityEstimator,
         })
 
     def evaluate_agent(self, test_spec):
@@ -43,15 +53,13 @@ class ImplicitAgentTest(unittest.TestCase):
         if game.get_num_players() != 2:
             raise AttributeError('Only games with 2 players are supported')
 
-        agent_script_name = '%s.sh' % portfolio_name
-
         response_strategy_paths = []
         opponent_names = []
         opponent_script_paths = []
         for file in os.listdir(portfolio_directory):
             if file.endswith('-response.strategy'):
                 response_strategy_paths += [file]
-            elif file.endswith('.sh') and file != agent_script_name:
+            elif file.endswith('.sh') and not file.startswith(portfolio_name):
                 opponent_names += [file[:-len('.sh')]]
                 opponent_script_paths += ['%s/%s' % (portfolio_directory, file)]
 
@@ -83,7 +91,7 @@ class ImplicitAgentTest(unittest.TestCase):
             client = acpc.Client(game_file_path, '127.0.1.1', port_number)
 
             full_response_strategy_paths = ['%s/%s' % (portfolio_directory, s) for s in response_strategy_paths]
-            client.play(ImplicitModellingAgent(game_file_path, full_response_strategy_paths))
+            client.play(ImplicitModellingAgent(game_file_path, full_response_strategy_paths, utility_estimator_class=test_spec['utility_estimator_class']))
 
             scores_line = proc.stdout.readline().decode('utf-8').strip()
             agent_score = float(scores_line.split(':')[1].split('|')[1])

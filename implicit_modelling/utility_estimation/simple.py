@@ -8,6 +8,10 @@ from tools.hand_evaluation import get_utility
 
 class SimpleUtilityEstimator():
     def __init__(self, game, portfolio_strategies):
+        if game.get_num_players() != 2:
+            raise AttributeError(
+                'Only games with 2 players are supported')
+
         self.game = game
         self.portfolio_strategies = portfolio_strategies
         self.num_experts = len(portfolio_strategies)

@@ -8,6 +8,7 @@ from tools.io_util import read_strategy_from_file
 from tools.agent_utils import get_info_set, select_action, convert_action_to_int
 from implicit_modelling.exp3g import Exp3G
 from implicit_modelling.utility_estimation.simple import SimpleUtilityEstimator
+from implicit_modelling.utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
 
 
 class ImplicitModellingAgent(acpc.Agent):
@@ -57,9 +58,18 @@ class ImplicitModellingAgent(acpc.Agent):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print("Usage {game_file_path} {dealer_hostname} {dealer_port} *{portfolio_strategy_files_paths}")
+    if len(sys.argv) < 6:
+        print("Usage {game_file_path} {dealer_hostname} {dealer_port} [none|imaginary_observations] *{portfolio_strategy_files_paths}")
         sys.exit(1)
 
+    utility_estimator_type = sys.argv[4]
+    utility_estimator_class = None
+    if utility_estimator_type == 'none':
+        utility_estimator_class = SimpleUtilityEstimator
+    elif utility_estimator_type == 'imaginary_observations':
+        utility_estimator_class = ImaginaryObservationsUtilityEstimator
+    else:
+        raise AttributeError('Invalid utility estimation method type %s' % utility_estimator_type)
+
     client = acpc.Client(sys.argv[1], sys.argv[2], sys.argv[3])
-    client.play(ImplicitModellingAgent(sys.argv[1], sys.argv[4:]))
+    client.play(ImplicitModellingAgent(sys.argv[1], sys.argv[5:], utility_estimator_class=utility_estimator_class))

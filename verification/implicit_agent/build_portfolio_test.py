@@ -25,7 +25,8 @@ REPLACE_STRING_COMMENT = '###COMMENT###'
 REPLACE_STRING_GAME_FILE_PATH = '###GAME_FILE_PATH###'
 REPLACE_STRING_ENVIRONMENT_ACTIVATION = '###ENVIRONMENT_ACTIVATION###'
 OPPONENT_SCRIPT_REPLACE_STRING_COMMENT_FILE_PATH = '###STRATEGY_FILE_PATH###'
-AGENT_SCRIPT_PORTFOLIO_STRATEGIES_PATHS = "###PORTFOLIO_STRATEGIES_PATHS###"
+AGENT_SCRIPT_REPLACE_STRING_PORTFOLIO_STRATEGIES_PATHS = '###PORTFOLIO_STRATEGIES_PATHS###'
+AGENT_SCRIPT_REPLACE_STRING_UTILITY_ESTIMATION_TYPE = '###UTILITY_ESTIMATION_TYPE###'
 
 OPPONENT_SCRIPT_REPLACE_STRINGS = [
     REPLACE_STRING_COMMENT,
@@ -35,9 +36,13 @@ OPPONENT_SCRIPT_REPLACE_STRINGS = [
 AGENT_SCRIPT_REPLACE_STRINGS = [
     REPLACE_STRING_COMMENT,
     REPLACE_STRING_GAME_FILE_PATH,
-    AGENT_SCRIPT_PORTFOLIO_STRATEGIES_PATHS]
+    AGENT_SCRIPT_REPLACE_STRING_UTILITY_ESTIMATION_TYPE,
+    AGENT_SCRIPT_REPLACE_STRING_PORTFOLIO_STRATEGIES_PATHS]
 
 WARNING_COMMENT = 'This file is generated. Do not edit!'
+
+
+UTILITY_ESTIMATION_METHODS = ['none', 'imaginary_observations']
 
 
 KUHN_EQUILIBRIUM_STRATEGY_PATH = 'strategies/kuhn.limit.2p-equilibrium.strategy'
@@ -61,20 +66,20 @@ class BuildPortfolioTest(unittest.TestCase):
             'base_strategy_path': KUHN_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'kuhn_simple_portfolio',
             'opponent_tilt_types': [
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
+                # ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
+                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
 
-                # ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 5)),
-                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 5)),
-                # ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 5)),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 5)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 5)),
+                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 5)),
 
-                # ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 5)),
-                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 5)),
-                # ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 5)),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 5)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 5)),
+                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 5)),
 
-                # ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 5)),
-                # ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 5)),
-                # ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 5)),
+                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 5)),
+                ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 5)),
+                ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 5)),
             ],
         })
 
@@ -155,23 +160,26 @@ class BuildPortfolioTest(unittest.TestCase):
                     [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
                     ['source activate %s' % anaconda_env_name])
 
-        agent_script_path = '%s/%s.sh' % (strategies_directory, portfolio_name)
-        shutil.copy(BASE_AGENT_SCRIPT_PATH, agent_script_path)
+        for utility_estimation_method in UTILITY_ESTIMATION_METHODS:
+            agent_name_method_name = '' if utility_estimation_method == UTILITY_ESTIMATION_METHODS[0] else '-%s' % utility_estimation_method
+            agent_script_path = '%s/%s%s.sh' % (strategies_directory, portfolio_name, agent_name_method_name)
+            shutil.copy(BASE_AGENT_SCRIPT_PATH, agent_script_path)
 
-        strategies_replacement = ''
-        for i in range(portfolio_size):
-            strategies_replacement += '        "${WORKSPACE_DIR}/%s"' % response_strategy_paths[i]
-            if i < (portfolio_size - 1):
-                strategies_replacement += ' \\\n'
-        replace_in_file(
-            agent_script_path,
-            AGENT_SCRIPT_REPLACE_STRINGS,
-            [
-                WARNING_COMMENT,
-                game_file_path,
-                strategies_replacement])
-        if anaconda_env_name:
+            strategies_replacement = ''
+            for i in range(portfolio_size):
+                strategies_replacement += '        "${WORKSPACE_DIR}/%s"' % response_strategy_paths[i]
+                if i < (portfolio_size - 1):
+                    strategies_replacement += ' \\\n'
             replace_in_file(
                 agent_script_path,
-                [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
-                ['source activate %s' % anaconda_env_name])
+                AGENT_SCRIPT_REPLACE_STRINGS,
+                [
+                    WARNING_COMMENT,
+                    game_file_path,
+                    '"%s"' % utility_estimation_method,
+                    strategies_replacement])
+            if anaconda_env_name:
+                replace_in_file(
+                    agent_script_path,
+                    [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
+                    ['source activate %s' % anaconda_env_name])
