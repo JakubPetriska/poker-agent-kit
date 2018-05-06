@@ -22,40 +22,9 @@ TEST_DIRECTORY = 'verification/implicit_agent'
 PORTFOLIOS_DIRECTORY = '%s/portfolios' % TEST_DIRECTORY
 GAME_LOGS_DIRECTORY = '%s/logs' % TEST_DIRECTORY
 
-BASE_AGENT_SCRIPT_PATH = '%s/base_agent_script.sh' % TEST_DIRECTORY
-BASE_OPPONENT_SCRIPT_PATH = '%s/base_opponent_script.sh' % TEST_DIRECTORY
-
 START_DEALER_AND_OPPONENT_SCRIPT_PATH = './scripts/start_dealer_and_other_players.sh'
 
-REPLACE_STRING_COMMENT = '###COMMENT###'
-REPLACE_STRING_GAME_FILE_PATH = '###GAME_FILE_PATH###'
-REPLACE_STRING_ENVIRONMENT_ACTIVATION = '###ENVIRONMENT_ACTIVATION###'
-OPPONENT_SCRIPT_REPLACE_STRING_COMMENT_FILE_PATH = '###STRATEGY_FILE_PATH###'
-AGENT_SCRIPT_PORTFOLIO_STRATEGIES_PATHS = "###PORTFOLIO_STRATEGIES_PATHS###"
-
-OPPONENT_SCRIPT_REPLACE_STRINGS = [
-    REPLACE_STRING_COMMENT,
-    REPLACE_STRING_GAME_FILE_PATH,
-    OPPONENT_SCRIPT_REPLACE_STRING_COMMENT_FILE_PATH]
-
-AGENT_SCRIPT_REPLACE_STRINGS = [
-    REPLACE_STRING_COMMENT,
-    REPLACE_STRING_GAME_FILE_PATH,
-    AGENT_SCRIPT_PORTFOLIO_STRATEGIES_PATHS]
-
-WARNING_COMMENT = 'This file is generated. Do not edit!'
-
 NUM_EVAL_HANDS = 3000
-
-
-def replace_in_file(filename, old_strings, new_strings):
-    with open(filename) as f:
-        s = f.read()
-
-    with open(filename, 'w') as f:
-        for i in range(len(old_strings)):
-            s = s.replace(old_strings[i], new_strings[i])
-        f.write(s)
 
 
 class ImplicitAgentTest(unittest.TestCase):
@@ -74,59 +43,17 @@ class ImplicitAgentTest(unittest.TestCase):
         if game.get_num_players() != 2:
             raise AttributeError('Only games with 2 players are supported')
 
-        anaconda_env_name = None
-        if 'anaconda3/envs' in sys.executable:
-            anaconda_env_name = sys.executable.split('/anaconda3/envs/')[1].split('/')[0]
+        agent_script_name = '%s.sh' % portfolio_name
 
         response_strategy_paths = []
-        opponent_strategy_paths = []
         opponent_names = []
         opponent_script_paths = []
         for file in os.listdir(portfolio_directory):
             if file.endswith('-response.strategy'):
                 response_strategy_paths += [file]
-            elif file.endswith('-opponent.strategy'):
-                opponent_strategy_paths += [file]
-                opponent_name = file[:-len('-opponent.strategy')]
-                opponent_names += [opponent_name]
-
-                opponent_script_path = '%s/%s.sh' % (portfolio_directory, opponent_name)
-                opponent_script_paths += [opponent_script_path]
-                shutil.copy(BASE_OPPONENT_SCRIPT_PATH, opponent_script_path)
-                replace_in_file(
-                    opponent_script_path,
-                    OPPONENT_SCRIPT_REPLACE_STRINGS,
-                    [
-                        WARNING_COMMENT,
-                        game_file_path,
-                        '%s/%s' % (portfolio_directory, file)])
-                if anaconda_env_name:
-                    replace_in_file(
-                        opponent_script_path,
-                        [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
-                        ['source activate %s' % anaconda_env_name])
-        agent_script_path = '%s/%s.sh' % (portfolio_directory, portfolio_name)
-        shutil.copy(BASE_AGENT_SCRIPT_PATH, agent_script_path)
-
-        portfolio_size = len(response_strategy_paths)
-
-        strategies_replacement = ''
-        for i in range(portfolio_size):
-            strategies_replacement += '        "${WORKSPACE_DIR}/%s/%s"' % (portfolio_directory, response_strategy_paths[i])
-            if i < (portfolio_size - 1):
-                strategies_replacement += ' \\\n'
-        replace_in_file(
-            agent_script_path,
-            AGENT_SCRIPT_REPLACE_STRINGS,
-            [
-                WARNING_COMMENT,
-                game_file_path,
-                strategies_replacement])
-        if anaconda_env_name:
-            replace_in_file(
-                agent_script_path,
-                [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
-                ['source activate %s' % anaconda_env_name])
+            elif file.endswith('.sh') and file != agent_script_name:
+                opponent_names += [file[:-len('.sh')]]
+                opponent_script_paths += ['%s/%s' % (portfolio_directory, file)]
 
         portfolio_size = len(response_strategy_paths)
 
