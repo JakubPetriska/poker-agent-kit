@@ -6,7 +6,7 @@ from tools.tree_utils import get_parent_action
 from tools.hand_evaluation import get_utility
 
 
-class ImaginaryObservationsUtilityEstimator():
+class SimpleUtilityEstimator():
     def __init__(self, game, portfolio_strategies):
         self.game = game
         self.portfolio_strategies = portfolio_strategies

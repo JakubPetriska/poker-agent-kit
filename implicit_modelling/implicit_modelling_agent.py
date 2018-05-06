@@ -7,7 +7,7 @@ from tools.constants import NUM_ACTIONS
 from tools.io_util import read_strategy_from_file
 from tools.agent_utils import get_info_set, select_action, convert_action_to_int
 from implicit_modelling.exp3g import Exp3G
-from implicit_modelling.utility_estimation.imaginary_observatinos import ImaginaryObservationsUtilityEstimator
+from implicit_modelling.utility_estimation.simple import SimpleUtilityEstimator
 
 
 class ImplicitModellingAgent(acpc.Agent):
@@ -16,10 +16,12 @@ class ImplicitModellingAgent(acpc.Agent):
             game_file_path,
             portfolio_strategy_files_paths,
             exp3g_gamma=0.02,
-            exp3g_eta=0.025):
+            exp3g_eta=0.025,
+            utility_estimator_class=SimpleUtilityEstimator):
         super().__init__()
         self.portfolio_size = len(portfolio_strategy_files_paths)
         self.bandit_algorithm = Exp3G(exp3g_gamma, exp3g_eta, self.portfolio_size)
+        self.utility_estimator_class = utility_estimator_class
         self.utility_estimator = None
 
         self.portfolio_trees = []
@@ -30,7 +32,7 @@ class ImplicitModellingAgent(acpc.Agent):
             self.portfolio_dicts += [strategy_dict]
 
     def on_game_start(self, game):
-        self.utility_estimator = ImaginaryObservationsUtilityEstimator(game, self.portfolio_trees)
+        self.utility_estimator = self.utility_estimator_class(game, self.portfolio_trees)
 
     def _get_info_set_current_strategy(self, info_set):
         experts_weights = self.bandit_algorithm.get_current_expert_probabilities()
