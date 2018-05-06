@@ -105,7 +105,7 @@ class ImplicitAgentTest(unittest.TestCase):
                         opponent_script_path,
                         [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
                         ['source activate %s' % anaconda_env_name])
-        agent_script_path = '%s/agent.sh' % portfolio_directory
+        agent_script_path = '%s/%s.sh' % (portfolio_directory, portfolio_name)
         shutil.copy(BASE_AGENT_SCRIPT_PATH, agent_script_path)
 
         portfolio_size = len(response_strategy_paths)

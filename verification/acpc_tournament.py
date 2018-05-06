@@ -20,19 +20,23 @@ NUM_TOURNAMENT_HANDS = 3000
 
 
 class AcpcTournamentTest(unittest.TestCase):
+    def _get_portfolio_agents(self, portfolio_path):
+        agents = []
+        for file in os.listdir(portfolio_path):
+            if file.endswith('.sh'):
+                agent_name = file[:-len('.sh')].replace('_', ' ')
+                if agent_name[-1].isdigit():
+                    agents += [(agent_name, '/'.join([portfolio_path, file]))]
+                else:
+                    agents = [(agent_name, '/'.join([portfolio_path, file]))] + agents
+        return agents
+
     def test_kuhn_simple_portfolio_tournament(self):
         portfolio_path = 'verification/implicit_agent/portfolios/kuhn_simple_portfolio'
-        agents = [
-            ('kuhn_simple_portfolio',
-                    '%s/agent.sh' % portfolio_path)]
-        for file in os.listdir(portfolio_path):
-            if not file == 'agent.sh' and file.endswith('.sh'):
-                agent_name = file[:-len('.sh')]
-                agents += [(agent_name, '/'.join([portfolio_path, file]))]
         self.run_tournament({
             'game_file_path': 'games/kuhn.limit.2p.game',
             'name': 'kuhn_simple_portfolio',
-            'agents': agents,
+            'agents': self._get_portfolio_agents(portfolio_path),
         })
 
     def run_tournament(self, test_spec):
