@@ -53,6 +53,7 @@ class RnrParameterOptimizer():
 
         if self.show_progress:
             print()
+            print('Exploitability: %s +- %s' % (exploitability, max_exploitability_delta))
 
         while True:
             if self.show_progress:
@@ -78,6 +79,7 @@ class RnrParameterOptimizer():
                     checkpoint_callback=checkpoint_callback)
 
             if best_exploitability_delta < max_exploitability_delta:
+                print('Result exploitability: %s, p=%s' % (best_exploitability, p_current))
                 return result_strategy, best_exploitability, p_current
 
             if self.show_progress:

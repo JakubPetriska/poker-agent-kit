@@ -28,6 +28,9 @@ def build_portfolio(
 
     responses = []
     for i in range(num_opponents):
+        if log:
+            print()
+            print('Training response %s/%s' % (i + 1, num_opponents))
         current_rnr_params = rnr_params[i]
         exploitability = current_rnr_params[0]
         exploitability_max_delta = current_rnr_params[1]
