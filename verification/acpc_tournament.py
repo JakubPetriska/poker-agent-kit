@@ -46,6 +46,8 @@ class AcpcTournamentTest(unittest.TestCase):
         tournament_name = test_spec['name']
 
         logs_base_dir = '/'.join([workspace_dir, FILES_PATH, tournament_name])
+        if os.path.exists(logs_base_dir):
+            shutil.rmtree(logs_base_dir)
 
         agents = test_spec['agents']
         num_agents = len(agents)
@@ -108,7 +110,8 @@ class AcpcTournamentTest(unittest.TestCase):
         for i in range(num_agents):
             table[i][0] = agent_names[i]
             table[i][i + 1] = None
-        print(tabulate(table, headers=agent_names, tablefmt='grid'))
+        all_results_table_string = tabulate(table, headers=agent_names, tablefmt='grid')
+        print(all_results_table_string)
 
         print()
         print('Averaged results:')
@@ -116,4 +119,13 @@ class AcpcTournamentTest(unittest.TestCase):
             for j in range(i + 1, num_agents):
                 table[i][j + 1] = (scores_table[i, j] - scores_table[j, i]) / 2
                 table[j][i + 1] = None
-        print(tabulate(table, headers=agent_names, tablefmt='grid'))
+        avg_results_table_string = tabulate(table, headers=agent_names, tablefmt='grid')
+        print(avg_results_table_string)
+
+        with open('%s/results.log' % logs_base_dir, 'w') as file:
+            file.write('All results:\n')
+            file.write(all_results_table_string)
+            file.write('\n\n')
+            file.write('Averaged results:\n')
+            file.write(avg_results_table_string)
+            file.write('\n')
