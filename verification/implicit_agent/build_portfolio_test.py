@@ -26,19 +26,18 @@ class BuildPortfolioTest(unittest.TestCase):
             'game_file_path': 'games/kuhn.limit.2p.game',
             'base_strategy_path': KUHN_EQUILIBRIUM_STRATEGY_PATH,
             'strategy_output_folder': '%s/kuhn_simple_portfolio' % TEST_OUTPUT_DIRECTORY,
-            'rnr_iterations': 1500,
             'opponent_tilt_types': [
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, 0.2),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, 0.2),
-                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, 0.2),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 5)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 5)),
+                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 5)),
 
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, 0.2),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, 0.2),
-                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, 0.2),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 5)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 5)),
+                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 5)),
 
-                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, 0.2),
-                ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, 0.05),
-                ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, 0.05),
+                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 5)),
+                ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 5)),
+                ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 5)),
             ],
         })
 
@@ -68,7 +67,7 @@ class BuildPortfolioTest(unittest.TestCase):
         portfolio_strategies, response_indices = build_portfolio(
             game_file_path,
             opponents,
-            [(agent[3], test_spec['rnr_iterations']) for agent in agent_specs],
+            [agent[4] for agent in agent_specs],
             log=True,
             output_directory=strategies_directory)
 
