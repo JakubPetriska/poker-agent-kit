@@ -74,7 +74,7 @@ class AcpcTournamentTest(unittest.TestCase):
             'game_file_path': 'games/leduc.limit.2p.game',
             'name': 'leduc_simple_portfolio-medium',
             'row_agents': implicit_agents,
-            'column_agents': opponent_agents,
+            'column_agents': implicit_agents[1:] + opponent_agents,
         })
 
     def run_tournament(self, test_spec):

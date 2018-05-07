@@ -84,26 +84,34 @@ class BuildPortfolioTest(unittest.TestCase):
             ],
         })
 
+    def test_leduc_test_build_portfolio(self):
+        self.train_and_show_results({
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
+            'portfolio_name': 'leduc_test_portfolio',
+            'opponent_tilt_types': [
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (500, 500, 10, 10, 2)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (500, 500, 10, 10, 2)),
+            ],
+        })
+
     def test_leduc_simple_build_portfolio(self):
         self.train_and_show_results({
             'game_file_path': 'games/leduc.limit.2p.game',
             'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'leduc_simple_portfolio',
             'opponent_tilt_types': [
-                # ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
-                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 10, 1000, 50)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 10, 1000, 50)),
+                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 10, 1000, 50)),
 
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 20, 700, 50, 300)),
-                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 5)),
-                # ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 5)),
+                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 10, 1000, 50)),
+                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 10, 1000, 50)),
+                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 10, 1000, 50)),
 
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 20, 700, 50, 300)),
-                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 5)),
-                # ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 5)),
-
-                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 20, 700, 50, 300)),
-                # ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 5)),
-                # ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 5)),
+                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
+                ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
+                ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
             ],
         })
 

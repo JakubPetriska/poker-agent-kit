@@ -44,6 +44,20 @@ class ImplicitAgentTest(unittest.TestCase):
             'utility_estimator_class': ImaginaryObservationsUtilityEstimator,
         })
 
+    def test_leduc_simple_portfolio(self):
+        self.evaluate_agent({
+            'portfolio_name': 'leduc_simple_portfolio',
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'utility_estimator_class': SimpleUtilityEstimator,
+        })
+
+    def test_leduc_simple_portfolio_imaginary_observations(self):
+        self.evaluate_agent({
+            'portfolio_name': 'leduc_simple_portfolio',
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'utility_estimator_class': ImaginaryObservationsUtilityEstimator,
+        })
+
     def evaluate_agent(self, test_spec):
         portfolio_name = test_spec['portfolio_name']
         portfolio_directory = '%s/%s' % (PORTFOLIOS_DIRECTORY, portfolio_name)
