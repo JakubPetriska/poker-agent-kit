@@ -67,6 +67,16 @@ class AcpcTournamentTest(unittest.TestCase):
             'column_agents': opponent_agents,
         })
 
+    def test_leduc_simple_portfolio_tournament_medium(self):
+        portfolio_path = 'verification/implicit_agent/portfolios/leduc_simple_portfolio'
+        implicit_agents, opponent_agents = self._get_portfolio_agents(portfolio_path)
+        self.run_tournament({
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'name': 'leduc_simple_portfolio-medium',
+            'row_agents': implicit_agents,
+            'column_agents': opponent_agents,
+        })
+
     def run_tournament(self, test_spec):
         workspace_dir = os.getcwd()
 
