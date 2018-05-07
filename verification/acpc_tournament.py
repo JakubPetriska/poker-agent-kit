@@ -26,8 +26,11 @@ class AcpcTournamentTest(unittest.TestCase):
             if file.endswith('.sh'):
                 agent_name = file[:-len('.sh')].replace('_', ' ')
                 if agent_name[-1].isdigit():
+                    # Weak evaluation agent
                     agents += [(agent_name, '/'.join([portfolio_path, file]))]
                 else:
+                    # Implicit modelling agent
+                    agent_name = agent_name.replace('-', '-\n')
                     agents = [(agent_name, '/'.join([portfolio_path, file]))] + agents
         return agents
 
