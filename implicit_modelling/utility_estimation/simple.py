@@ -4,6 +4,7 @@ from tools.agent_utils import convert_action_to_int
 from tools.game_tree.nodes import HoleCardsNode, BoardCardsNode, ActionNode
 from tools.tree_utils import get_parent_action
 from tools.hand_evaluation import get_utility
+from implicit_modelling.utility_estimation.utils import get_all_board_cards
 
 
 class SimpleUtilityEstimator():
@@ -53,7 +54,7 @@ class SimpleUtilityEstimator():
                 if action_index == state.get_num_actions(round_index):
                     round_index += 1
                     action_index = 0
-                if round_index == self.game.get_num_rounds():
+                if round_index > state.get_round():
                     break
             nodes = [node.children[child_key] for node in nodes]
 
@@ -66,7 +67,7 @@ class SimpleUtilityEstimator():
             [state.get_hole_card(p, c) for c in range(self.game.get_num_hole_cards())]
             for p in range(num_players)]
 
-        board_cards = [state.get_board_card(c) for c in range(self.game.get_total_num_board_cards(self.game.get_num_rounds() - 1))]
+        board_cards = get_all_board_cards(self.game, state)
         players_folded = [state.get_player_folded(p) for p in range(num_players)]
         pot_commitment = [state.get_spent(p) for p in range(num_players)]
         return get_utility(hole_cards, board_cards, players_folded, pot_commitment)[match_state.get_viewing_player()]

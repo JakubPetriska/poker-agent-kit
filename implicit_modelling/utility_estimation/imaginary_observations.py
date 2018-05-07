@@ -5,6 +5,7 @@ from tools.game_tree.nodes import BoardCardsNode, ActionNode, TerminalNode
 from tools.tree_utils import get_parent_action
 from tools.hand_evaluation import get_utility
 from tools.utils import is_unique, flatten
+from implicit_modelling.utility_estimation.utils import get_all_board_cards, get_board_cards
 
 
 class ImaginaryObservationsUtilityEstimator():
@@ -17,17 +18,6 @@ class ImaginaryObservationsUtilityEstimator():
         self.portfolio_strategies = portfolio_strategies
         self.num_experts = len(portfolio_strategies)
 
-    def _get_all_board_cards(self, state):
-        total_num_board_cards = self.game.get_total_num_board_cards(state.get_round())
-        return [state.get_board_card(c) for c in range(0, total_num_board_cards)]
-
-    def _get_board_cards(self, state, round_index):
-        total_num_board_cards = self.game.get_total_num_board_cards(round_index)
-        round_num_board_cards = self.game.get_num_board_cards(round_index)
-        start_board_card_index = total_num_board_cards - round_num_board_cards
-        board_cards = [state.get_board_card(c) for c in range(start_board_card_index, total_num_board_cards)]
-        return tuple(sorted(board_cards))
-
     def get_expert_utility_estimations(self, match_state, expert_probabilities):
         num_players = self.game.get_num_players()
         player = match_state.get_viewing_player()
@@ -39,7 +29,7 @@ class ImaginaryObservationsUtilityEstimator():
         any_player_folded = False
         for p in range(num_players):
             any_player_folded = any_player_folded or state.get_player_folded(p)
-        all_board_cards = self._get_all_board_cards(state)
+        all_board_cards = get_all_board_cards(self.game, state)
 
         hole_cards_node = self.portfolio_strategies[0]
         opponent_hole_cards = None
@@ -90,7 +80,7 @@ class ImaginaryObservationsUtilityEstimator():
         while True:
             node = nodes[0][0]
             if isinstance(node, BoardCardsNode):
-                new_board_cards = self._get_board_cards(state, round_index)
+                new_board_cards = get_board_cards(self.game, state, round_index)
                 nodes = [[expert_node.children[new_board_cards] for expert_node in expert_nodes] for expert_nodes in nodes]
             elif isinstance(node, ActionNode):
                 action = convert_action_to_int(state.get_action_type(round_index, action_index))
