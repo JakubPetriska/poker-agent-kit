@@ -95,12 +95,14 @@ class ImaginaryObservationsUtilityEstimator():
             elif isinstance(node, ActionNode):
                 action = convert_action_to_int(state.get_action_type(round_index, action_index))
                 if node.player == player:
-                    if action != 0 and 0 in node.children:
-                        expert_reach_probabilities_copy = np.copy(expert_reach_probabilities)
-                        update_reach_proabilities(0, nodes, expert_reach_probabilities_copy, None)
-                        players_folded = [True if p == player else False for p in range(2)]
-                        new_nodes = [[expert_node.children[0] for expert_node in expert_nodes] for expert_nodes in nodes]
-                        add_terminals_to_utilities(new_nodes, players_folded, expert_reach_probabilities_copy, player_reach_probabilities)
+                    for other_action in node.children:
+                        if other_action != action and isinstance(node.children[other_action], TerminalNode) \
+                                and (other_action == 0 or not any_player_folded):
+                            expert_reach_probabilities_copy = np.copy(expert_reach_probabilities)
+                            update_reach_proabilities(0, nodes, expert_reach_probabilities_copy, None)
+                            players_folded = [True if p == player and other_action == 0 else False for p in range(2)]
+                            new_nodes = [[expert_node.children[other_action] for expert_node in expert_nodes] for expert_nodes in nodes]
+                            add_terminals_to_utilities(new_nodes, players_folded, expert_reach_probabilities_copy, player_reach_probabilities)
                     else:
                         update_reach_proabilities(action, nodes, expert_reach_probabilities, player_reach_probabilities)
 
