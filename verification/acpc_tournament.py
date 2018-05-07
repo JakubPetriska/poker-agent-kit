@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from tabulate import tabulate
+import copy
 
 import acpc_python_client as acpc
 
@@ -21,25 +22,49 @@ NUM_TOURNAMENT_HANDS = 3000
 
 class AcpcTournamentTest(unittest.TestCase):
     def _get_portfolio_agents(self, portfolio_path):
-        agents = []
+        implicit_agents = []
+        opponent_agents = []
         for file in os.listdir(portfolio_path):
             if file.endswith('.sh'):
-                agent_name = file[:-len('.sh')].replace('_', ' ')
+                agent_name = file[:-len('.sh')]
                 if agent_name[-1].isdigit():
                     # Weak evaluation agent
-                    agents += [(agent_name, '/'.join([portfolio_path, file]))]
+                    opponent_agents += [(agent_name, agent_name, '/'.join([portfolio_path, file]))]
                 else:
                     # Implicit modelling agent
-                    agent_name = agent_name.replace('-', '-\n')
-                    agents = [(agent_name, '/'.join([portfolio_path, file]))] + agents
-        return agents
+                    print_agent_name = agent_name.replace('_', ' ').replace('-', '-\n')
+                    implicit_agents += [(agent_name, print_agent_name, '/'.join([portfolio_path, file]))]
+        return implicit_agents, opponent_agents
 
-    def test_kuhn_simple_portfolio_tournament(self):
+    def test_kuhn_simple_portfolio_tournament_full(self):
         portfolio_path = 'verification/implicit_agent/portfolios/kuhn_simple_portfolio'
+        implicit_agents, opponent_agents = self._get_portfolio_agents(portfolio_path)
+        agents = implicit_agents + opponent_agents
         self.run_tournament({
             'game_file_path': 'games/kuhn.limit.2p.game',
-            'name': 'kuhn_simple_portfolio',
-            'agents': self._get_portfolio_agents(portfolio_path),
+            'name': 'kuhn_simple_portfolio-full',
+            'row_agents': agents,
+            'column_agents': agents,
+        })
+
+    def test_kuhn_simple_portfolio_tournament_medium(self):
+        portfolio_path = 'verification/implicit_agent/portfolios/kuhn_simple_portfolio'
+        implicit_agents, opponent_agents = self._get_portfolio_agents(portfolio_path)
+        self.run_tournament({
+            'game_file_path': 'games/kuhn.limit.2p.game',
+            'name': 'kuhn_simple_portfolio-medium',
+            'row_agents': implicit_agents,
+            'column_agents': implicit_agents[1:] + opponent_agents,
+        })
+
+    def test_kuhn_simple_portfolio_tournament_short(self):
+        portfolio_path = 'verification/implicit_agent/portfolios/kuhn_simple_portfolio'
+        implicit_agents, opponent_agents = self._get_portfolio_agents(portfolio_path)
+        self.run_tournament({
+            'game_file_path': 'games/kuhn.limit.2p.game',
+            'name': 'kuhn_simple_portfolio-short',
+            'row_agents': implicit_agents,
+            'column_agents': opponent_agents,
         })
 
     def run_tournament(self, test_spec):
@@ -56,22 +81,39 @@ class AcpcTournamentTest(unittest.TestCase):
         if os.path.exists(logs_base_dir):
             shutil.rmtree(logs_base_dir)
 
-        agents = test_spec['agents']
-        num_agents = len(agents)
-        agent_scripts_paths = [workspace_dir + '/' + agent[1] for agent in agents]
+        row_agents = test_spec['row_agents']
+        row_num_agents = len(row_agents)
+        row_agent_scripts_paths = [workspace_dir + '/' + agent[2] for agent in row_agents]
+
+        column_agents = test_spec['column_agents']
+        column_num_agents = len(column_agents)
+        column_agent_scripts_paths = [workspace_dir + '/' + agent[2] for agent in column_agents]
 
         seed = int(datetime.now().timestamp())
 
-        scores_table = np.zeros([num_agents] * 2)
+        scores_table = [[None for j in range(column_num_agents)] for i in range(row_num_agents)]
 
-        for i in range(num_agents):
-            for j in range(i + 1, num_agents):
-                first_agent_name = agents[i][0]
-                second_agent_name = agents[j][0]
-                match_name = '%s-vs-%s' % (first_agent_name, second_agent_name)
-                match_logs_dir = '%s/%s' % (logs_base_dir, match_name)
-                if not os.path.exists(match_logs_dir):
-                    os.makedirs(match_logs_dir)
+        agent_pairs_evaluated = []
+
+        for i in range(row_num_agents):
+            for j in range(column_num_agents):
+                row_agent_name = row_agents[i][0]
+                column_agent_name = column_agents[j][0]
+                if row_agent_name == column_agent_name:
+                    continue
+
+                agent_pair_key = tuple(sorted([row_agent_name, column_agent_name]))
+                if agent_pair_key in agent_pairs_evaluated:
+                    continue
+
+                row_agent_script_path = row_agent_scripts_paths[i]
+                column_agent_script_path = column_agent_scripts_paths[j]
+
+                match_name = '%s-vs-%s' % (row_agent_name, column_agent_name)
+                match_logs_dir = ('%s/%s' % (logs_base_dir, match_name)).replace('\n', '')
+                if os.path.exists(match_logs_dir):
+                    shutil.rmtree(match_logs_dir)
+                os.makedirs(match_logs_dir)
 
                 proc = subprocess.Popen(
                     [
@@ -80,15 +122,14 @@ class AcpcTournamentTest(unittest.TestCase):
                         game_file_path,
                         str(NUM_TOURNAMENT_HANDS),
                         str(seed),
-                        first_agent_name,
-                        agent_scripts_paths[i],
-                        second_agent_name,
-                        agent_scripts_paths[j]],
+                        row_agent_name,
+                        row_agent_script_path,
+                        column_agent_name,
+                        column_agent_script_path],
                     cwd=ACPC_INFRASTRUCTURE_DIR,
                     stdout=subprocess.PIPE)
                 scores_line = proc.stdout.readline().decode('utf-8').strip()
-                score = float(scores_line.split(':')[1].split('|')[0])
-                scores_table[i, j] = score
+                row_agent_score = float(scores_line.split(':')[1].split('|')[0])
 
                 proc = subprocess.Popen(
                     [
@@ -97,42 +138,27 @@ class AcpcTournamentTest(unittest.TestCase):
                         game_file_path,
                         str(NUM_TOURNAMENT_HANDS),
                         str(seed),
-                        second_agent_name,
-                        agent_scripts_paths[j],
-                        first_agent_name,
-                        agent_scripts_paths[i]],
+                        column_agent_name,
+                        column_agent_script_path,
+                        row_agent_name,
+                        row_agent_script_path],
                     cwd=ACPC_INFRASTRUCTURE_DIR,
                     stdout=subprocess.PIPE)
                 scores_line = proc.stdout.readline().decode('utf-8').strip()
-                score = float(scores_line.split(':')[1].split('|')[0])
-                scores_table[j, i] = score
+                row_agent_score += float(scores_line.split(':')[1].split('|')[1])
+                scores_table[i][j] = row_agent_score / 2
+
+                agent_pairs_evaluated += [agent_pair_key]
 
         print()
         print()
-        print('All results:')
-        agent_names = [agents[i][0] for i in range(num_agents)]
-        table = np.zeros([num_agents, num_agents + 1])
-        table[:, 1:] = scores_table
-        table = table.tolist()
-        for i in range(num_agents):
-            table[i][0] = agent_names[i]
-            table[i][i + 1] = None
-        all_results_table_string = tabulate(table, headers=agent_names, tablefmt='grid')
-        print(all_results_table_string)
-
-        print()
-        print('Averaged results:')
-        for i in range(num_agents):
-            for j in range(i + 1, num_agents):
-                table[i][j + 1] = (scores_table[i, j] - scores_table[j, i]) / 2
-                table[j][i + 1] = None
-        avg_results_table_string = tabulate(table, headers=agent_names, tablefmt='grid')
+        scores_copy = copy.deepcopy(scores_table)
+        for i in range(row_num_agents):
+            scores_copy[i] = [row_agents[i][1]] + scores_copy[i]
+        column_agent_names = [agent[1] for agent in column_agents]
+        avg_results_table_string = tabulate(scores_copy, headers=column_agent_names, tablefmt='grid')
         print(avg_results_table_string)
 
         with open('%s/results.log' % logs_base_dir, 'w') as file:
-            file.write('All results:\n')
-            file.write(all_results_table_string)
-            file.write('\n\n')
-            file.write('Averaged results:\n')
             file.write(avg_results_table_string)
             file.write('\n')
