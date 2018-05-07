@@ -13,6 +13,7 @@ from weak_agents.action_tilted_agent import create_agent_strategy_from_trained_s
 from tools.io_util import read_strategy_from_file
 from implicit_modelling.build_portfolio import build_portfolio
 from tools.io_util import write_strategy_to_file
+from evaluation.exploitability import Exploitability
 
 
 TEST_DIRECTORY = 'verification/implicit_agent'
@@ -88,6 +89,9 @@ class BuildPortfolioTest(unittest.TestCase):
         portfolio_name = test_spec['portfolio_name']
         strategies_directory = '%s/%s' % (TEST_OUTPUT_DIRECTORY, portfolio_name)
 
+        game = acpc.read_game_file(game_file_path)
+        exp = Exploitability(game)
+
         if os.path.exists(strategies_directory):
             shutil.rmtree(strategies_directory)
         os.makedirs(strategies_directory)
@@ -126,6 +130,11 @@ class BuildPortfolioTest(unittest.TestCase):
         for i, strategy in enumerate(portfolio_strategies):
             agent_name = agent_names[i]
 
+            opponent_strategy = opponents[response_indices[i]]
+            opponent_exploitability = exp.evaluate(opponent_strategy)
+            response_exploitability = exp.evaluate(strategy)
+            response_utility_vs_opponent = exp.evaluate(opponent_strategy, strategy)
+
             # Save portfolio response strategy
             response_strategy_output_file_path = '%s/%s-response.strategy' % (strategies_directory, agent_name)
             counter = 0
@@ -133,7 +142,14 @@ class BuildPortfolioTest(unittest.TestCase):
                 counter += 1
                 response_strategy_output_file_path = '%s/%s-%s-response.strategy' % (strategies_directory, agent_name, counter)
             response_strategy_paths += [response_strategy_output_file_path]
-            write_strategy_to_file(strategy, response_strategy_output_file_path)
+            write_strategy_to_file(
+                strategy,
+                response_strategy_output_file_path,
+                [
+                    'Opponent exploitability: %s' % opponent_exploitability,
+                    'Response exploitability: %s' % response_exploitability,
+                    'Response value vs opponent: %s' % response_utility_vs_opponent,
+                ])
 
             # Save opponent strategy
             opponent_strategy_file_name = '%s-opponent.strategy' % agent_name
@@ -142,7 +158,7 @@ class BuildPortfolioTest(unittest.TestCase):
             while os.path.exists(opponent_strategy_output_file_path):
                 counter += 1
                 opponent_strategy_output_file_path = '%s/%s-%s-opponent.strategy' % (strategies_directory, agent_name, counter)
-            write_strategy_to_file(opponents[response_indices[i]], opponent_strategy_output_file_path)
+            write_strategy_to_file(opponent_strategy, opponent_strategy_output_file_path)
 
             # Generate opponent ACPC script
             opponent_script_path = '%s/%s.sh' % (strategies_directory, agent_name)

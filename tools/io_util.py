@@ -50,11 +50,12 @@ def write_strategy_to_file(tree, output_path, prefix_lines=None):
     with open(output_path, 'w') as file:
         if prefix_lines:
             for line in prefix_lines:
-                if line.endswith('\n'):
-                    line_with_newline = line
-                else:
-                    line_with_newline = '%s\n' % line
-                file.write(line_with_newline)
+                line_to_print = line
+                if not line_to_print.endswith('\n'):
+                    line_to_print = '%s\n' % line_to_print
+                if not line_to_print.startswith('#'):
+                    line_to_print = '# %s' % line_to_print
+                file.write(line_to_print)
         for line in sorted(get_strategy_lines(tree)):
             file.write(line)
 
