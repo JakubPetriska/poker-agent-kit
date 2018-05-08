@@ -118,14 +118,17 @@ class BuildPortfolioTest(unittest.TestCase):
     def train_and_show_results(self, test_spec):
         game_file_path = test_spec['game_file_path']
         portfolio_name = test_spec['portfolio_name']
-        strategies_directory = '%s/%s' % (TEST_OUTPUT_DIRECTORY, portfolio_name)
+
+        strategies_directory_base = '%s/%s' % (TEST_OUTPUT_DIRECTORY, portfolio_name)
+        strategies_directory = strategies_directory_base
+        counter = 1
+        while os.path.exists(strategies_directory):
+            strategies_directory = '%s(%s)' % (strategies_directory_base, counter)
+            counter += 1
+        os.makedirs(strategies_directory)
 
         game = acpc.read_game_file(game_file_path)
         exp = Exploitability(game)
-
-        if os.path.exists(strategies_directory):
-            shutil.rmtree(strategies_directory)
-        os.makedirs(strategies_directory)
 
         base_strategy, _ = read_strategy_from_file(
             game_file_path,

@@ -87,9 +87,12 @@ class AcpcTournamentTest(unittest.TestCase):
 
         tournament_name = test_spec['name']
 
-        logs_base_dir = '/'.join([workspace_dir, FILES_PATH, tournament_name])
-        if os.path.exists(logs_base_dir):
-            shutil.rmtree(logs_base_dir)
+        logs_base_dir_name = '/'.join([workspace_dir, FILES_PATH, tournament_name])
+        logs_base_dir = logs_base_dir_name
+        counter = 1
+        while os.path.exists(logs_base_dir):
+            logs_base_dir = '%s(%s)' % (logs_base_dir_name, counter)
+            counter += 1
 
         row_agents = test_spec['row_agents']
         row_num_agents = len(row_agents)
@@ -121,8 +124,6 @@ class AcpcTournamentTest(unittest.TestCase):
 
                 match_name = '%s-vs-%s' % (row_agent_name, column_agent_name)
                 match_logs_dir = ('%s/%s' % (logs_base_dir, match_name)).replace('\n', '')
-                if os.path.exists(match_logs_dir):
-                    shutil.rmtree(match_logs_dir)
                 os.makedirs(match_logs_dir)
 
                 proc = subprocess.Popen(
