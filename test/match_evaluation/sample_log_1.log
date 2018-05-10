@@ -1,0 +1,6 @@
+STATE:0:cc/cc:Qs|Ks/Ah:1|-1:player_1|player_2
+STATE:1:cc/cc:Qs|Ks/Ah:5|-5:player_2|player_1
+STATE:2:cc/cc:Ks|Qs/Ah:3|-3:player_1|player_2
+STATE:3:cc/cc:Ks|Qs/Ah:-3|3:player_2|player_1
+STATE:4:cc/cc:Ks|Qs/Ah:3|-3:player_1|player_2
+SCORE:5|-5:player_1|player_2

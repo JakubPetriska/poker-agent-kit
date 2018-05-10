@@ -11,6 +11,7 @@ from test.data_biased_response_tests import DataBiasedResponseTests
 from test.weak_agents_tests import WeakAgentsTests
 from test.restricted_nash_response_tests import RnrTests
 from test.implicit_agent_tests import ImplicitAgentTests
+from test.match_evaluation_tests import MatchEvaluationTests
 
 test_classes = [
     HandEvaluationTests,
@@ -23,6 +24,7 @@ test_classes = [
     WeakAgentsTests,
     RnrTests,
     ImplicitAgentTests,
+    MatchEvaluationTests,
 ]
 
 
