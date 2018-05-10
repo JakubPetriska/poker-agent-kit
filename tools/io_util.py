@@ -83,3 +83,18 @@ def read_strategy_from_file(game_file_path, strategy_file_path):
 
     walk_trees(on_node, strategy_tree)
     return strategy_tree, strategy
+
+def get_new_path(path_base, path_suffix='', overwrite_base_path=False):
+    new_path = path_base + path_suffix
+    if overwrite_base_path:
+        return new_path
+    counter = 0
+    while os.path.exists(new_path):
+        counter += 1
+        new_path = '%s(%s)%s' % (path_base, counter, path_suffix)
+    return new_path
+
+def create_path_dirs(path):
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
