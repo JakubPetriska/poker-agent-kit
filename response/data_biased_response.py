@@ -2,6 +2,8 @@ import random
 import numpy as np
 
 from cfr.main import Cfr, NUM_PLAYERS
+from tools.game_tree.nodes import ActionNode
+from tools.walk_trees import walk_trees
 
 
 class DataBiasedResponse(Cfr):
@@ -12,26 +14,25 @@ class DataBiasedResponse(Cfr):
             p_max=0.8,
             show_progress=True):
         super().__init__(game, show_progress)
-        self.opponent_sample_tree = opponent_sample_tree
         self.p_max = p_max
+
+        opponent_action_decision_counts = {}
+        def callback(node):
+            if isinstance(node, ActionNode):
+                nonlocal opponent_action_decision_counts
+                opponent_action_decision_counts[str(node)] = node.action_decision_counts
+        walk_trees(callback, opponent_sample_tree)
+        self.opponent_action_decision_counts = opponent_action_decision_counts
 
     def _get_algorithm_name(self):
         return 'DBR'
 
-    def _start_iteration(self, player):
-        self._cfr(
-            player,
-            ([self.game_tree] * NUM_PLAYERS) + [self.opponent_sample_tree],
-            None,
-            [],
-            [False] * NUM_PLAYERS,
-            1)
-
-    def _get_opponent_strategy(self, nodes):
-        samples_node = nodes[-1]
-        samples_count = np.sum(samples_node.action_decision_counts)
+    def _get_opponent_strategy(self, player, nodes):
+        opponent_index = (player + 1) % 2
+        action_decision_counts = self.opponent_action_decision_counts[str(nodes[opponent_index])]
+        samples_count = np.sum(action_decision_counts)
         p_conf = self.p_max * min(1, samples_count / 10)
         if random.random() <= p_conf:
-            return samples_node.action_decision_counts / samples_count
+            return action_decision_counts / samples_count
         else:
-            return super(DataBiasedResponse, self)._get_opponent_strategy(nodes)
+            return super(DataBiasedResponse, self)._get_opponent_strategy(nodes, player)
