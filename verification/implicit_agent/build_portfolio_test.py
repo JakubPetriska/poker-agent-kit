@@ -60,6 +60,10 @@ def replace_in_file(filename, old_strings, new_strings):
         f.write(s)
 
 
+def get_agent_name(agent):
+        return '%s-%s-%s' % (str(agent[0]).split('.')[1], str(agent[1]).split('.')[1], agent[2])
+
+
 class BuildPortfolioTest(unittest.TestCase):
     def test_kuhn_simple_build_portfolio(self):
         self.train_and_show_results({
@@ -67,20 +71,20 @@ class BuildPortfolioTest(unittest.TestCase):
             'base_strategy_path': KUHN_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'kuhn_simple_portfolio',
             'opponent_tilt_types': [
-                # ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
-                # ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
+                # (Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
+                # (Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
 
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 5)),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 5)),
-                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 5)),
+                (Action.FOLD, TiltType.ADD, 0.5, (100, 5)),
+                (Action.CALL, TiltType.ADD, 0.5, (100, 5)),
+                (Action.RAISE, TiltType.ADD, 0.75, (100, 5)),
 
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 5)),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 5)),
-                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 5)),
+                (Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 5)),
+                (Action.CALL, TiltType.MULTIPLY, 0.5, (100, 5)),
+                (Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 5)),
 
-                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 5)),
-                ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 5)),
-                ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 5)),
+                (Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 5)),
+                (Action.CALL, TiltType.MULTIPLY, 0.8, (100, 5)),
+                (Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 5)),
             ],
         })
 
@@ -90,8 +94,8 @@ class BuildPortfolioTest(unittest.TestCase):
             'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'leduc_test_portfolio',
             'opponent_tilt_types': [
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (500, 500, 10, 10, 2)),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (500, 500, 10, 10, 2)),
+                (Action.FOLD, TiltType.ADD, 0.5, (500, 500, 10, 10, 2)),
+                (Action.CALL, TiltType.ADD, 0.5, (500, 500, 10, 10, 2)),
             ],
         })
 
@@ -101,17 +105,17 @@ class BuildPortfolioTest(unittest.TestCase):
             'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'leduc_simple_portfolio',
             'opponent_tilt_types': [
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.ADD, 0.5, (100, 10, 1000, 50)),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.ADD, 0.5, (100, 10, 1000, 50)),
-                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.ADD, 0.75, (100, 10, 1000, 50)),
+                (Action.FOLD, TiltType.ADD, 0.5, (100, 10, 1000, 50)),
+                (Action.CALL, TiltType.ADD, 0.5, (100, 10, 1000, 50)),
+                (Action.RAISE, TiltType.ADD, 0.75, (100, 10, 1000, 50)),
 
-                ('FOLD-ADD-0.5-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 10, 1000, 50)),
-                ('CALL-ADD-0.5-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.5, (100, 10, 1000, 50)),
-                ('RAISE-ADD-0.75-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 10, 1000, 50)),
+                (Action.FOLD, TiltType.MULTIPLY, 0.5, (100, 10, 1000, 50)),
+                (Action.CALL, TiltType.MULTIPLY, 0.5, (100, 10, 1000, 50)),
+                (Action.RAISE, TiltType.MULTIPLY, 0.75, (100, 10, 1000, 50)),
 
-                ('FOLD-MULTIPLY-0.8-p=0.2', Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
-                ('CALL-MULTIPLY-0.8-p=0.2', Action.CALL, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
-                ('RAISE-MULTIPLY-0.8-p=0.2', Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
+                (Action.FOLD, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
+                (Action.CALL, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
+                (Action.RAISE, TiltType.MULTIPLY, 0.8, (100, 10, 1000, 50)),
             ],
         })
 
@@ -141,20 +145,20 @@ class BuildPortfolioTest(unittest.TestCase):
             opponent_strategy = create_agent_strategy_from_trained_strategy(
                 game_file_path,
                 base_strategy,
+                agent[0],
                 agent[1],
-                agent[2],
-                agent[3])
+                agent[2])
             opponents += [opponent_strategy]
         portfolio_strategies, response_indices = build_portfolio(
             game_file_path,
             opponents,
-            [agent[4] for agent in agent_specs],
+            [agent[3] for agent in agent_specs],
             log=True,
             output_directory=strategies_directory)
 
         portfolio_size = len(portfolio_strategies)
 
-        agent_names = [agent_spec[0] for agent_spec in np.take(agent_specs, response_indices, axis=0)]
+        agent_names = [get_agent_name(agent) for agent in np.take(agent_specs, response_indices, axis=0)]
 
         anaconda_env_name = None
         if 'anaconda3/envs' in sys.executable:
