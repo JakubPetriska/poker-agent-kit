@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import multiprocessing
 
 import acpc_python_client as acpc
 
@@ -9,6 +10,29 @@ from evaluation.exploitability import Exploitability
 from tools.game_utils import is_strategies_equal
 
 
+def _train_response(params):
+    i, num_opponents, log, parallel, game, rnr_params, opponent_strategy_trees = params
+    log_training = log and not parallel
+    if log_training:
+        print()
+        print('Training response %s/%s' % (i + 1, num_opponents))
+    current_rnr_params = rnr_params[i]
+    exploitability = current_rnr_params[0]
+    exploitability_max_delta = current_rnr_params[1]
+    rnr_args = { 'show_progress': log_training }
+    if len(current_rnr_params) > 2:
+        rnr_args['iterations'] = current_rnr_params[2]
+    if len(current_rnr_params) > 3:
+        rnr_args['checkpoint_iterations'] = current_rnr_params[3]
+    if len(current_rnr_params) > 4:
+        rnr_args['weigth_delay'] = current_rnr_params[4]
+    rnr = RnrParameterOptimizer(game, **rnr_args)
+    response_strategy, _, _ = rnr.train(opponent_strategy_trees[i], exploitability, exploitability_max_delta)
+
+    if log and parallel:
+        print('Finished Training response %s/%s' % (i + 1, num_opponents))
+    return response_strategy
+
 def build_portfolio(
         game_file_path,
         opponent_strategy_trees,
@@ -16,7 +40,8 @@ def build_portfolio(
         portfolio_size=-1,
         portfolio_cut_improvement_threshold=0.05,
         log=False,
-        output_directory=None):
+        output_directory=None,\
+        parallel=False):
     if portfolio_size <= 0 \
         and not portfolio_cut_improvement_threshold or portfolio_cut_improvement_threshold <= 0:
         raise AttributeError('Either portfolio_size or portfolio_cut_improvement_threshold larger than 0 must be provided')
@@ -26,24 +51,19 @@ def build_portfolio(
     game = acpc.read_game_file(game_file_path)
     exp = Exploitability(game)
 
-    responses = []
-    for i in range(num_opponents):
-        if log:
-            print()
-            print('Training response %s/%s' % (i + 1, num_opponents))
-        current_rnr_params = rnr_params[i]
-        exploitability = current_rnr_params[0]
-        exploitability_max_delta = current_rnr_params[1]
-        rnr_args = { 'show_progress': log }
-        if len(current_rnr_params) > 2:
-            rnr_args['iterations'] = current_rnr_params[2]
-        if len(current_rnr_params) > 3:
-            rnr_args['checkpoint_iterations'] = current_rnr_params[3]
-        if len(current_rnr_params) > 4:
-            rnr_args['weigth_delay'] = current_rnr_params[4]
-        rnr = RnrParameterOptimizer(game, **rnr_args)
-        response_strategy, _, _ = rnr.train(opponent_strategy_trees[i], exploitability, exploitability_max_delta)
-        responses += [response_strategy]
+    if log:
+        print()
+
+    responses = None
+    if parallel:
+        params = [(i, num_opponents, log, parallel, game, rnr_params, opponent_strategy_trees) for i in range(num_opponents)]
+        with multiprocessing.Pool(multiprocessing.cpu_count()) as p:
+            responses = p.map(_train_response, params)
+    else:
+        responses = []
+        for i in range(num_opponents):
+            params = (i, num_opponents, log, parallel, game, rnr_params, opponent_strategy_trees)
+            responses += [_train_response(params)]
 
     utilities = np.zeros([num_opponents, num_opponents])
     for i in range(num_opponents):

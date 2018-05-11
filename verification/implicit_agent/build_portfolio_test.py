@@ -70,6 +70,7 @@ class BuildPortfolioTest(unittest.TestCase):
             'game_file_path': 'games/kuhn.limit.2p.game',
             'base_strategy_path': KUHN_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'kuhn_simple_portfolio',
+            'parallel': True,
             'opponent_tilt_types': [
                 # (Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
                 # (Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
@@ -164,12 +165,15 @@ class BuildPortfolioTest(unittest.TestCase):
                 agent[1],
                 agent[2])
             opponents += [opponent_strategy]
+
+        parallel = test_spec['parallel'] if 'parallel' in test_spec else False
         portfolio_strategies, response_indices = build_portfolio(
             game_file_path,
             opponents,
             [agent[3] for agent in agent_specs],
             log=True,
-            output_directory=strategies_directory)
+            output_directory=strategies_directory,
+            parallel=parallel)
 
         portfolio_size = len(portfolio_strategies)
 
