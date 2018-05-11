@@ -119,6 +119,21 @@ class BuildPortfolioTest(unittest.TestCase):
             ],
         })
 
+    def test_leduc_final_build_portfolio(self):
+        tilt_probabilities = [0.4, 0.6, 0.8, 1]
+        opponents = []
+        for action in Action:
+            for tilt_type in TiltType:
+                for tilt_probability in tilt_probabilities:
+                    opponents += [(action, tilt_type, tilt_probability, (100, 10, 1000, 50))]
+        self.train_and_show_results({
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
+            'portfolio_name': 'leduc_final_portfolio',
+            'parallel': True,
+            'opponent_tilt_types': opponents,
+        })
+
     def train_and_show_results(self, test_spec):
         game_file_path = test_spec['game_file_path']
         portfolio_name = test_spec['portfolio_name']
