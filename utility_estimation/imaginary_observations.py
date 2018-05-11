@@ -5,7 +5,7 @@ from tools.game_tree.nodes import BoardCardsNode, ActionNode, TerminalNode
 from tools.tree_utils import get_parent_action
 from tools.hand_evaluation import get_utility
 from tools.utils import is_unique, flatten
-from implicit_modelling.utility_estimation.utils import get_all_board_cards, get_board_cards
+from utility_estimation.utils import get_all_board_cards, get_board_cards
 
 
 class ImaginaryObservationsUtilityEstimator():

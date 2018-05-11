@@ -7,8 +7,8 @@ from tools.constants import NUM_ACTIONS
 from tools.io_util import read_strategy_from_file
 from tools.agent_utils import get_info_set, select_action, convert_action_to_int
 from implicit_modelling.exp3g import Exp3G
-from implicit_modelling.utility_estimation.simple import SimpleUtilityEstimator
-from implicit_modelling.utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
+from utility_estimation.simple import SimpleUtilityEstimator
+from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
 
 
 class ImplicitModellingAgent(acpc.Agent):

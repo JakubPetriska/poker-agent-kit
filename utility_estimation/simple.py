@@ -4,7 +4,7 @@ from tools.agent_utils import convert_action_to_int
 from tools.game_tree.nodes import HoleCardsNode, BoardCardsNode, ActionNode
 from tools.tree_utils import get_parent_action
 from tools.hand_evaluation import get_utility
-from implicit_modelling.utility_estimation.utils import get_all_board_cards
+from utility_estimation.utils import get_all_board_cards
 
 
 class SimpleUtilityEstimator():
