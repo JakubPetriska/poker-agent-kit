@@ -21,7 +21,7 @@ class MatchEvaluationTests(unittest.TestCase):
             'test/match_evaluation/sample_log_2.log'
         ]
         log_readings = [get_player_utilities_from_log_file(log_file_path) for log_file_path in log_files_paths]
-        data = get_logs_data(*log_readings)
+        data, _ = get_logs_data(*log_readings)
         means, interval_half_size, lower_bounds, upper_bounds = calculate_confidence_interval(data, 0.95)
         self.assertEqual(means.tolist(), [1, -1])
 

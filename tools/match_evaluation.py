@@ -71,7 +71,7 @@ def get_logs_data(*log_readings):
             start_hand_index = i * num_match_hands
             end_hand_index = start_hand_index + num_match_hands
             data[start_hand_index:end_hand_index, player_names.index(player_name)] = utilities[:, p]
-    return data
+    return data, player_names
 
 def calculate_confidence_interval(data, confidence):
     num_total_hands = data.shape[0]
