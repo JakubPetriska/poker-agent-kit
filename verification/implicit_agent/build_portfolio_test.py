@@ -11,7 +11,7 @@ import acpc_python_client as acpc
 from tools.constants import Action
 from weak_agents.action_tilted_agent import create_agent_strategy_from_trained_strategy, TiltType
 from tools.io_util import read_strategy_from_file
-from implicit_modelling.build_portfolio import build_portfolio
+from implicit_modelling.build_portfolio import train_portfolio_responses, optimize_portfolio
 from tools.io_util import write_strategy_to_file
 from evaluation.exploitability import Exploitability
 
@@ -167,13 +167,18 @@ class BuildPortfolioTest(unittest.TestCase):
             opponents += [opponent_strategy]
 
         parallel = test_spec['parallel'] if 'parallel' in test_spec else False
-        portfolio_strategies, response_indices = build_portfolio(
+        opponent_responses = train_portfolio_responses(
             game_file_path,
             opponents,
             [agent[3] for agent in agent_specs],
             log=True,
-            output_directory=strategies_directory,
             parallel=parallel)
+        portfolio_strategies, response_indices = optimize_portfolio(
+            game_file_path,
+            opponents,
+            opponent_responses,
+            log=True,
+            output_directory=strategies_directory)
 
         portfolio_size = len(portfolio_strategies)
 

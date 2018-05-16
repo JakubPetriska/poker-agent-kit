@@ -6,7 +6,7 @@ from tools.game_tree.builder import GameTreeBuilder
 from tools.game_tree.node_provider import StrategyTreeNodeProvider
 from tools.game_tree.nodes import ActionNode
 from tools.walk_trees import walk_trees
-from implicit_modelling.build_portfolio import build_portfolio
+from implicit_modelling.build_portfolio import train_portfolio_responses, optimize_portfolio
 
 
 KUHN_POKER_GAME_FILE_PATH = 'games/kuhn.limit.2p.game'
@@ -44,9 +44,13 @@ class ImplicitAgentTests(unittest.TestCase):
             self.create_strategy(game, on_node_always_fold),
             self.create_strategy(game, on_node_uniform)]
 
-        portfolio_strategies, opponent_indices = build_portfolio(
+        opponent_responses = train_portfolio_responses(
             KUHN_POKER_GAME_FILE_PATH,
             opponents,
             [(100, 800, 10, 2, 2)] * len(opponents))
+        portfolio_strategies, opponent_indices = optimize_portfolio(
+            KUHN_POKER_GAME_FILE_PATH,
+            opponents,
+            opponent_responses)
         self.assertGreaterEqual(len(portfolio_strategies), 1)
         self.assertEqual(len(portfolio_strategies), len(opponent_indices))

@@ -30,23 +30,16 @@ def _train_response(params):
     response_strategy, _, _ = rnr.train(opponent_strategy_trees[i], exploitability, exploitability_max_delta)
     return (i, response_strategy)
 
-def build_portfolio(
+def train_portfolio_responses(
         game_file_path,
         opponent_strategy_trees,
         rnr_params,
-        portfolio_size=-1,
-        portfolio_cut_improvement_threshold=0.05,
+        callback=None,
         log=False,
-        output_directory=None,\
         parallel=False):
-    if portfolio_size <= 0 \
-        and not portfolio_cut_improvement_threshold or portfolio_cut_improvement_threshold <= 0:
-        raise AttributeError('Either portfolio_size or portfolio_cut_improvement_threshold larger than 0 must be provided')
-
     num_opponents = len(opponent_strategy_trees)
 
     game = acpc.read_game_file(game_file_path)
-    exp = Exploitability(game)
 
     if log:
         print()
@@ -58,16 +51,43 @@ def build_portfolio(
             for i, result in enumerate(p.imap_unordered(_train_response, params)):
                 response_index, response_strategy = result
                 responses[response_index] = response_strategy
-                print('Progress: %s/%s' % (i + 1, num_opponents))
+                if callback:
+                    callback(response_index, response_strategy)
+                if log:
+                    print('Progress: %s/%s' % (i + 1, num_opponents))
     else:
-        for i in range(num_opponents):
-            _, response_strategy = _train_response(params[i])
-            responses[i] = response_strategy
+        for response_index, response_strategy in map(lambda p: _train_response(p), params):
+            if callback:
+                callback(response_index, response_strategy)
+            responses[response_index] = response_strategy
+
+    return responses
+
+
+def optimize_portfolio(
+        game_file_path,
+        opponent_strategies,
+        response_strategies,
+        portfolio_size=-1,
+        portfolio_cut_improvement_threshold=0.05,
+        log=False,
+        output_directory=None):
+    if portfolio_size <= 0 \
+        and not portfolio_cut_improvement_threshold or portfolio_cut_improvement_threshold <= 0:
+        raise AttributeError('Either portfolio_size or portfolio_cut_improvement_threshold larger than 0 must be provided')
+
+    num_opponents = len(opponent_strategies)
+
+    game = acpc.read_game_file(game_file_path)
+    exp = Exploitability(game)
+
+    if log:
+        print()
 
     utilities = np.zeros([num_opponents, num_opponents])
     for i in range(num_opponents):
         for j in range(num_opponents):
-            utilities[i, j] = exp.evaluate(opponent_strategy_trees[j], responses[i])
+            utilities[i, j] = exp.evaluate(opponent_strategies[j], response_strategies[i])
 
     portfolio_utilities = np.zeros(num_opponents)
     response_added = np.ones(num_opponents, dtype=np.intp) * -1
@@ -140,5 +160,5 @@ def build_portfolio(
         else:
             plt.show()
 
-    response_indices = response_added[:final_portfolio_size]
-    return np.take(responses, response_indices), response_indices
+    portfolio_response_indices = response_added[:final_portfolio_size]
+    return np.take(response_strategies, portfolio_response_indices), portfolio_response_indices

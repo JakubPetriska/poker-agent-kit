@@ -12,7 +12,6 @@ import acpc_python_client as acpc
 from tools.constants import Action
 from weak_agents.action_tilted_agent import create_agent_strategy_from_trained_strategy, TiltType
 from tools.io_util import read_strategy_from_file
-from implicit_modelling.build_portfolio import build_portfolio
 from tools.io_util import write_strategy_to_file
 from implicit_modelling.implicit_modelling_agent import ImplicitModellingAgent
 from tools.game_utils import get_big_blind_size
