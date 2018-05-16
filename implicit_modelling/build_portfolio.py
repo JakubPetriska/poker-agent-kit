@@ -28,10 +28,7 @@ def _train_response(params):
         rnr_args['weigth_delay'] = current_rnr_params[4]
     rnr = RnrParameterOptimizer(game, **rnr_args)
     response_strategy, _, _ = rnr.train(opponent_strategy_trees[i], exploitability, exploitability_max_delta)
-
-    if log and parallel:
-        print('Finished Training response %s/%s' % (i + 1, num_opponents))
-    return response_strategy
+    return (i, response_strategy)
 
 def build_portfolio(
         game_file_path,
@@ -54,16 +51,18 @@ def build_portfolio(
     if log:
         print()
 
-    responses = None
+    responses = [None] * num_opponents
+    params = [(i, num_opponents, log, parallel, game, rnr_params, opponent_strategy_trees) for i in range(num_opponents)]
     if parallel:
-        params = [(i, num_opponents, log, parallel, game, rnr_params, opponent_strategy_trees) for i in range(num_opponents)]
-        with multiprocessing.Pool(multiprocessing.cpu_count()) as p:
-            responses = p.map(_train_response, params)
+        with multiprocessing.Pool(max(int(multiprocessing.cpu_count() / 2), 2)) as p:
+            for i, result in enumerate(p.imap_unordered(_train_response, params)):
+                response_index, response_strategy = result
+                responses[response_index] = response_strategy
+                print('Progress: %s/%s' % (i + 1, num_opponents))
     else:
-        responses = []
         for i in range(num_opponents):
-            params = (i, num_opponents, log, parallel, game, rnr_params, opponent_strategy_trees)
-            responses += [_train_response(params)]
+            _, response_strategy = _train_response(params[i])
+            responses[i] = response_strategy
 
     utilities = np.zeros([num_opponents, num_opponents])
     for i in range(num_opponents):
