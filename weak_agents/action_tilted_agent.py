@@ -67,18 +67,18 @@ def create_agent_strategy_from_trained_strategy(
     def on_node(node):
         if tilt_action_index in node.children:
             original_tilt_action_probability = node.strategy[tilt_action_index]
-            new_tilt_action_probability = -1
+            new_tilt_action_probability = None
             if tilt_type == TiltType.ADD:
                 new_tilt_action_probability = np.clip(original_tilt_action_probability + tilt_probability, 0, 1)
             elif tilt_type == TiltType.MULTIPLY:
                 new_tilt_action_probability = np.clip(
                     original_tilt_action_probability + original_tilt_action_probability * tilt_probability, 0, 1)
             node.strategy[tilt_action_index] = new_tilt_action_probability
-            diff = original_tilt_action_probability - new_tilt_action_probability
-            per_action_diff = diff / (len(node.children) - 1)
-            for a in node.children:
-                if a != tilt_action_index:
-                    node.strategy[a] += per_action_diff
+            diff = new_tilt_action_probability - original_tilt_action_probability
+            if diff != 0:
+                other_actions_probability = 1 - original_tilt_action_probability
+                for a in filter(lambda a: a != tilt_action_index, node.children):
+                    node.strategy[a] -= diff * (node.strategy[a] / other_actions_probability)
 
     result_strategy = None
     if in_place:
