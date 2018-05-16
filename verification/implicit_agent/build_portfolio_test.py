@@ -10,9 +10,8 @@ import acpc_python_client as acpc
 
 from tools.constants import Action
 from weak_agents.action_tilted_agent import create_agent_strategy_from_trained_strategy, TiltType
-from tools.io_util import read_strategy_from_file
+from tools.io_util import read_strategy_from_file, write_strategy_to_file
 from implicit_modelling.build_portfolio import train_portfolio_responses, optimize_portfolio
-from tools.io_util import write_strategy_to_file
 from evaluation.exploitability import Exploitability
 
 
@@ -50,7 +49,7 @@ KUHN_EQUILIBRIUM_STRATEGY_PATH = 'strategies/kuhn.limit.2p-equilibrium.strategy'
 LEDUC_EQUILIBRIUM_STRATEGY_PATH = 'strategies/leduc.limit.2p-equilibrium.strategy'
 
 
-def replace_in_file(filename, old_strings, new_strings):
+def _replace_in_file(filename, old_strings, new_strings):
     with open(filename) as f:
         s = f.read()
 
@@ -60,8 +59,17 @@ def replace_in_file(filename, old_strings, new_strings):
         f.write(s)
 
 
-def get_agent_name(agent):
-        return '%s-%s-%s' % (str(agent[0]).split('.')[1], str(agent[1]).split('.')[1], agent[2])
+def _get_agent_name(agent):
+    return '%s-%s-%s-exp:%s+-%s' % (str(agent[0]).split('.')[1], str(agent[1]).split('.')[1], agent[2], agent[3][0], agent[3][1])
+
+
+def _check_agent_names_unique(agent_specs):
+    last_name = None
+    for name in sorted(map(lambda a: _get_agent_name(a), agent_specs)):
+        if name == last_name:
+            return False
+        last_name = name
+    return True
 
 
 class BuildPortfolioTest(unittest.TestCase):
@@ -71,9 +79,10 @@ class BuildPortfolioTest(unittest.TestCase):
             'base_strategy_path': KUHN_EQUILIBRIUM_STRATEGY_PATH,
             'portfolio_name': 'kuhn_simple_portfolio',
             'parallel': True,
+            'overwrite_portfolio_path': True,
             'opponent_tilt_types': [
-                # (Action.FOLD, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
-                # (Action.CALL, TiltType.ADD, 0.5, (100, 300, 10, 2, 2)),
+                # (Action.FOLD, TiltType.ADD, 0.5, (100, 5, 10, 2, 2)),
+                # (Action.CALL, TiltType.ADD, 0.5, (100, 5, 10, 2, 2)),
 
                 (Action.FOLD, TiltType.ADD, 0.5, (100, 5)),
                 (Action.CALL, TiltType.ADD, 0.5, (100, 5)),
@@ -138,14 +147,21 @@ class BuildPortfolioTest(unittest.TestCase):
     def train_and_show_results(self, test_spec):
         game_file_path = test_spec['game_file_path']
         portfolio_name = test_spec['portfolio_name']
+        agent_specs = test_spec['opponent_tilt_types']
+
+        if not _check_agent_names_unique(agent_specs):
+            raise AttributeError('Agents must be unique so that they have unique names')
+
 
         strategies_directory_base = '%s/%s' % (TEST_OUTPUT_DIRECTORY, portfolio_name)
         strategies_directory = strategies_directory_base
-        counter = 1
-        while os.path.exists(strategies_directory):
-            strategies_directory = '%s(%s)' % (strategies_directory_base, counter)
-            counter += 1
-        os.makedirs(strategies_directory)
+        if 'overwrite_portfolio_path' not in test_spec or not test_spec['overwrite_portfolio_path']:
+            counter = 1
+            while os.path.exists(strategies_directory):
+                strategies_directory = '%s(%s)' % (strategies_directory_base, counter)
+                counter += 1
+        if not os.path.exists(strategies_directory):
+            os.makedirs(strategies_directory)
 
         game = acpc.read_game_file(game_file_path)
         exp = Exploitability(game)
@@ -154,8 +170,7 @@ class BuildPortfolioTest(unittest.TestCase):
             game_file_path,
             test_spec['base_strategy_path'])
 
-        agent_specs = test_spec['opponent_tilt_types']
-
+        num_opponents = len(agent_specs)
         opponents = []
         for agent in agent_specs:
             opponent_strategy = create_agent_strategy_from_trained_strategy(
@@ -167,12 +182,42 @@ class BuildPortfolioTest(unittest.TestCase):
             opponents += [opponent_strategy]
 
         parallel = test_spec['parallel'] if 'parallel' in test_spec else False
-        opponent_responses = train_portfolio_responses(
+
+        response_paths = ['%s/responses/%s-response.strategy' % (strategies_directory, _get_agent_name(agent)) for agent in agent_specs]
+
+        opponent_responses = [None] * num_opponents
+        responses_to_train_indices = []
+        responses_to_train_opponents = []
+        responses_to_train_params = []
+        for i in range(num_opponents):
+            if os.path.exists(response_paths[i]):
+                response_strategy, _ = read_strategy_from_file(game_file_path, response_paths[i])
+                opponent_responses[i] = response_strategy
+            else:
+                responses_to_train_indices += [i]
+                responses_to_train_opponents += [opponents[i]]
+                responses_to_train_params += [agent_specs[i][3]]
+
+        def on_response_trained(response_index, response_strategy):
+            output_file_path = response_paths[responses_to_train_indices[response_index]]
+            output_file_dir = os.path.dirname(output_file_path)
+            if not os.path.exists(output_file_dir):
+                os.makedirs(output_file_dir)
+            write_strategy_to_file(
+                response_strategy,
+                output_file_path)
+
+        responses_to_train_strategies = train_portfolio_responses(
             game_file_path,
-            opponents,
-            [agent[3] for agent in agent_specs],
+            responses_to_train_opponents,
+            responses_to_train_params,
             log=True,
-            parallel=parallel)
+            parallel=parallel,
+            callback=on_response_trained)
+
+        for i, j in enumerate(responses_to_train_indices):
+            opponent_responses[j] = responses_to_train_strategies[i]
+
         portfolio_strategies, response_indices = optimize_portfolio(
             game_file_path,
             opponents,
@@ -182,11 +227,16 @@ class BuildPortfolioTest(unittest.TestCase):
 
         portfolio_size = len(portfolio_strategies)
 
-        agent_names = [get_agent_name(agent) for agent in np.take(agent_specs, response_indices, axis=0)]
+        agent_names = [_get_agent_name(agent) for agent in np.take(agent_specs, response_indices, axis=0)]
 
         anaconda_env_name = None
         if 'anaconda3/envs' in sys.executable:
             anaconda_env_name = sys.executable.split('/anaconda3/envs/')[1].split('/')[0]
+
+        for file in os.listdir(strategies_directory):
+            absolute_path = '/'.join([strategies_directory, file])
+            if os.path.isfile(absolute_path):
+                os.remove(absolute_path)
 
         response_strategy_file_names = []
         for i, strategy in enumerate(portfolio_strategies):
@@ -199,10 +249,6 @@ class BuildPortfolioTest(unittest.TestCase):
 
             # Save portfolio response strategy
             response_strategy_output_file_path = '%s/%s-response.strategy' % (strategies_directory, agent_name)
-            counter = 0
-            while os.path.exists(response_strategy_output_file_path):
-                counter += 1
-                response_strategy_output_file_path = '%s/%s-%s-response.strategy' % (strategies_directory, agent_name, counter)
             response_strategy_file_names += [response_strategy_output_file_path.split('/')[-1]]
             write_strategy_to_file(
                 strategy,
@@ -216,16 +262,12 @@ class BuildPortfolioTest(unittest.TestCase):
             # Save opponent strategy
             opponent_strategy_file_name = '%s-opponent.strategy' % agent_name
             opponent_strategy_output_file_path = '%s/%s' % (strategies_directory, opponent_strategy_file_name)
-            counter = 0
-            while os.path.exists(opponent_strategy_output_file_path):
-                counter += 1
-                opponent_strategy_output_file_path = '%s/%s-%s-opponent.strategy' % (strategies_directory, agent_name, counter)
             write_strategy_to_file(opponent_strategy, opponent_strategy_output_file_path)
 
             # Generate opponent ACPC script
             opponent_script_path = '%s/%s.sh' % (strategies_directory, agent_name)
             shutil.copy(BASE_OPPONENT_SCRIPT_PATH, opponent_script_path)
-            replace_in_file(
+            _replace_in_file(
                 opponent_script_path,
                 OPPONENT_SCRIPT_REPLACE_STRINGS,
                 [
@@ -233,7 +275,7 @@ class BuildPortfolioTest(unittest.TestCase):
                     game_file_path,
                     opponent_strategy_output_file_path.split('/')[-1]])
             if anaconda_env_name:
-                replace_in_file(
+                _replace_in_file(
                     opponent_script_path,
                     [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
                     ['source activate %s' % anaconda_env_name])
@@ -248,7 +290,7 @@ class BuildPortfolioTest(unittest.TestCase):
                 strategies_replacement += '        "${SCRIPT_DIR}/%s"' % response_strategy_file_names[i]
                 if i < (portfolio_size - 1):
                     strategies_replacement += ' \\\n'
-            replace_in_file(
+            _replace_in_file(
                 agent_script_path,
                 AGENT_SCRIPT_REPLACE_STRINGS,
                 [
@@ -257,7 +299,7 @@ class BuildPortfolioTest(unittest.TestCase):
                     '"%s"' % utility_estimation_method,
                     strategies_replacement])
             if anaconda_env_name:
-                replace_in_file(
+                _replace_in_file(
                     agent_script_path,
                     [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
                     ['source activate %s' % anaconda_env_name])
