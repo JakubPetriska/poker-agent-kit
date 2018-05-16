@@ -183,7 +183,7 @@ class BuildPortfolioTest(unittest.TestCase):
         if 'anaconda3/envs' in sys.executable:
             anaconda_env_name = sys.executable.split('/anaconda3/envs/')[1].split('/')[0]
 
-        response_strategy_paths = []
+        response_strategy_file_names = []
         for i, strategy in enumerate(portfolio_strategies):
             agent_name = agent_names[i]
 
@@ -198,7 +198,7 @@ class BuildPortfolioTest(unittest.TestCase):
             while os.path.exists(response_strategy_output_file_path):
                 counter += 1
                 response_strategy_output_file_path = '%s/%s-%s-response.strategy' % (strategies_directory, agent_name, counter)
-            response_strategy_paths += [response_strategy_output_file_path]
+            response_strategy_file_names += [response_strategy_output_file_path.split('/')[-1]]
             write_strategy_to_file(
                 strategy,
                 response_strategy_output_file_path,
@@ -226,7 +226,7 @@ class BuildPortfolioTest(unittest.TestCase):
                 [
                     WARNING_COMMENT,
                     game_file_path,
-                    opponent_strategy_output_file_path])
+                    opponent_strategy_output_file_path.split('/')[-1]])
             if anaconda_env_name:
                 replace_in_file(
                     opponent_script_path,
@@ -240,7 +240,7 @@ class BuildPortfolioTest(unittest.TestCase):
 
             strategies_replacement = ''
             for i in range(portfolio_size):
-                strategies_replacement += '        "${WORKSPACE_DIR}/%s"' % response_strategy_paths[i]
+                strategies_replacement += '        "${SCRIPT_DIR}/%s"' % response_strategy_file_names[i]
                 if i < (portfolio_size - 1):
                     strategies_replacement += ' \\\n'
             replace_in_file(
