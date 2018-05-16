@@ -130,7 +130,7 @@ class BuildPortfolioTest(unittest.TestCase):
         })
 
     def test_leduc_final_build_portfolio(self):
-        tilt_probabilities = [0.4, 0.6, 0.8, 1]
+        tilt_probabilities = [-1, -0.8, -0.6, -0.4, 0.4, 0.6, 0.8, 1]
         opponents = []
         for action in Action:
             for tilt_type in TiltType:
@@ -142,6 +142,7 @@ class BuildPortfolioTest(unittest.TestCase):
             'portfolio_name': 'leduc_final_portfolio',
             'parallel': True,
             'opponent_tilt_types': opponents,
+            'overwrite_portfolio_path': True,
         })
 
     def train_and_show_results(self, test_spec):
