@@ -16,8 +16,8 @@ from implicit_modelling.build_portfolio import build_portfolio
 from tools.io_util import write_strategy_to_file
 from implicit_modelling.implicit_modelling_agent import ImplicitModellingAgent
 from tools.game_utils import get_big_blind_size
-from implicit_modelling.utility_estimation.simple import SimpleUtilityEstimator
-from implicit_modelling.utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
+from utility_estimation.simple import SimpleUtilityEstimator
+from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
 
 
 TEST_DIRECTORY = 'verification/implicit_agent'
