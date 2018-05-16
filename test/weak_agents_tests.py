@@ -55,15 +55,36 @@ class WeakAgentsTests(unittest.TestCase):
         game = acpc.read_game_file(KUHN_POKER_GAME_FILE_PATH)
         exploitability = Exploitability(game)
 
-        raise_add_tilted = create_agent_strategy_from_trained_strategy(
+        tilted_agent_strategy = create_agent_strategy_from_trained_strategy(
             KUHN_POKER_GAME_FILE_PATH,
             kuhn_equilibrium,
             Action.RAISE,
             TiltType.ADD,
             0.2)
-        self.assertTrue(is_correct_strategy(raise_add_tilted))
-        self.assertTrue(not is_strategies_equal(kuhn_equilibrium, raise_add_tilted))
+        self.assertTrue(is_correct_strategy(tilted_agent_strategy))
+        self.assertTrue(not is_strategies_equal(kuhn_equilibrium, tilted_agent_strategy))
 
         equilibrium_exploitability = exploitability.evaluate(kuhn_equilibrium)
-        raise_add_tilted_exploitability = exploitability.evaluate(raise_add_tilted)
+        raise_add_tilted_exploitability = exploitability.evaluate(tilted_agent_strategy)
+        self.assertTrue(raise_add_tilted_exploitability > equilibrium_exploitability)
+
+    def test_kuhn_action_minus_tilted_agent(self):
+        kuhn_equilibrium, _ = read_strategy_from_file(
+            KUHN_POKER_GAME_FILE_PATH,
+            'strategies/kuhn.limit.2p-equilibrium.strategy')
+
+        game = acpc.read_game_file(KUHN_POKER_GAME_FILE_PATH)
+        exploitability = Exploitability(game)
+
+        tilted_agent_strategy = create_agent_strategy_from_trained_strategy(
+            KUHN_POKER_GAME_FILE_PATH,
+            kuhn_equilibrium,
+            Action.CALL,
+            TiltType.ADD,
+            -0.5)
+        self.assertTrue(is_correct_strategy(tilted_agent_strategy))
+        self.assertTrue(not is_strategies_equal(kuhn_equilibrium, tilted_agent_strategy))
+
+        equilibrium_exploitability = exploitability.evaluate(kuhn_equilibrium)
+        raise_add_tilted_exploitability = exploitability.evaluate(tilted_agent_strategy)
         self.assertTrue(raise_add_tilted_exploitability > equilibrium_exploitability)

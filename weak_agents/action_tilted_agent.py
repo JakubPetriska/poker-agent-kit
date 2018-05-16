@@ -75,8 +75,12 @@ def create_agent_strategy_from_trained_strategy(
                     original_tilt_action_probability + original_tilt_action_probability * tilt_probability, 0, 1)
             node.strategy[tilt_action_index] = new_tilt_action_probability
             diff = new_tilt_action_probability - original_tilt_action_probability
-            if diff != 0:
-                other_actions_probability = 1 - original_tilt_action_probability
+            other_actions_probability = 1 - original_tilt_action_probability
+            if diff != 0 and other_actions_probability == 0:
+                other_action_probability_diff = diff / (len(node.children) - 1)
+                for a in filter(lambda a: a != tilt_action_index, node.children):
+                    node.strategy[a] -= other_action_probability_diff
+            elif diff != 0:
                 for a in filter(lambda a: a != tilt_action_index, node.children):
                     node.strategy[a] -= diff * (node.strategy[a] / other_actions_probability)
 
