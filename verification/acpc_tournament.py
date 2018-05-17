@@ -103,7 +103,7 @@ class AcpcTournamentTest(unittest.TestCase):
         column_num_agents = len(column_agents)
         column_agent_scripts_paths = [workspace_dir + '/' + agent[2] for agent in column_agents]
 
-        seed = int(datetime.now().timestamp())
+        seeds = []
 
         scores_table = [[None for j in range(column_num_agents)] for i in range(row_num_agents)]
 
@@ -139,6 +139,10 @@ class AcpcTournamentTest(unittest.TestCase):
                     run_logs_dir = '%s/run_%s' % (match_logs_dir, run_counter)
                     os.makedirs(run_logs_dir)
 
+                    if len(seeds) < run_counter:
+                        seeds += [int(datetime.now().timestamp())]
+                    seed = seeds[run_counter - 1]
+
                     normal_order_logs_name = '%s/%s' % (run_logs_dir, match_name)
                     proc = subprocess.Popen(
                         [
@@ -160,7 +164,7 @@ class AcpcTournamentTest(unittest.TestCase):
                     proc = subprocess.Popen(
                         [
                             MATCH_SCRIPT,
-                            '%s/%s' % (run_logs_dir, match_name_reversed),
+                            reversed_order_logs_name,
                             game_file_path,
                             str(NUM_TOURNAMENT_HANDS),
                             str(seed),
