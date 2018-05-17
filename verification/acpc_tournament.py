@@ -67,7 +67,7 @@ class AcpcTournamentTest(unittest.TestCase):
         for file in os.listdir(portfolio_path):
             if file.endswith('.sh'):
                 agent_name = file[:-len('.sh')]
-                if agent_name[-1].isdigit():
+                if  any(char.isdigit() for char in agent_name):
                     # Weak evaluation agent
                     opponent_agents += [(agent_name, agent_name, '/'.join([portfolio_path, file]))]
                 else:
