@@ -60,7 +60,7 @@ def _replace_in_file(filename, old_strings, new_strings):
 
 
 def _get_agent_name(agent):
-    return '%s-%s-%s-exp:%s+-%s' % (str(agent[0]).split('.')[1], str(agent[1]).split('.')[1], agent[2], agent[3][0], agent[3][1])
+    return '%s-%s-%s-exp(%s+-%s)' % (str(agent[0]).split('.')[1], str(agent[1]).split('.')[1], agent[2], agent[3][0], agent[3][1])
 
 
 def _check_agent_names_unique(agent_specs):
