@@ -9,15 +9,12 @@ from tools.game_tree.node_provider import NodeProvider
 class StrategiesWeightedMixtureActionNode(ActionNode):
     def __init__(self, parent, player):
         super().__init__(parent, player)
-        self.strategy_nodes = None
+        self.strategies = None
         self.weights = None
 
     def __getattr__(self, attr):
         if attr == 'strategy':
-            strategy_sum = np.zeros(3)
-            for i, node in enumerate(self.strategy_nodes):
-                strategy_sum += self.weights[i] * node.strategy
-            return strategy_sum
+            return np.average(self.strategies, axis=0, weights=self.weights)
 
 
 class StrategiesWeightedMixtureTreeNodeProvider(NodeProvider):
@@ -31,8 +28,12 @@ class StrategiesWeightedMixture():
         self.weights = np.ones(len(strategies)) / len(strategies)
 
         def on_nodes(*nodes):
-            nodes[0].weights = self.weights
-            nodes[0].strategy_nodes = nodes[1:]
+            mixture_node = nodes[0]
+            if isinstance(mixture_node, ActionNode):
+                mixture_node.weights = self.weights
+                mixture_node.strategies = np.zeros([len(strategies), 3])
+                for i, node in enumerate(nodes[1:]):
+                    mixture_node.strategies[i, :] = node.strategy
         walk_trees(on_nodes, self.strategy, *strategies)
 
     def update_weights(self, weights):
