@@ -167,6 +167,12 @@ class BuildPortfolioTest(unittest.TestCase):
         game = acpc.read_game_file(game_file_path)
         exp = Exploitability(game)
 
+        # Delete results since they will be generated again
+        for file in os.listdir(strategies_directory):
+            absolute_path = '/'.join([strategies_directory, file])
+            if os.path.isfile(absolute_path):
+                os.remove(absolute_path)
+
         base_strategy, _ = read_strategy_from_file(
             game_file_path,
             test_spec['base_strategy_path'])
@@ -241,14 +247,13 @@ class BuildPortfolioTest(unittest.TestCase):
 
         agent_names = [_get_agent_name(agent) for agent in np.take(agent_specs, response_indices, axis=0)]
 
+        print()
+        for a in agent_specs:
+            print(_get_agent_name(a))
+
         anaconda_env_name = None
         if 'anaconda3/envs' in sys.executable:
             anaconda_env_name = sys.executable.split('/anaconda3/envs/')[1].split('/')[0]
-
-        for file in os.listdir(strategies_directory):
-            absolute_path = '/'.join([strategies_directory, file])
-            if os.path.isfile(absolute_path):
-                os.remove(absolute_path)
 
         response_strategy_file_names = []
         for i, strategy in enumerate(portfolio_strategies):
