@@ -6,6 +6,7 @@ import acpc_python_client as acpc
 from tools.constants import NUM_ACTIONS
 from tools.io_util import read_strategy_from_file
 from tools.agent_utils import get_info_set, select_action, convert_action_to_int
+from implicit_modelling.strategies_weighted_mixeture import StrategiesWeightedMixture
 from implicit_modelling.exp3g import Exp3G
 from utility_estimation.simple import SimpleUtilityEstimator
 from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
@@ -32,8 +33,11 @@ class ImplicitModellingAgent(acpc.Agent):
             self.portfolio_trees += [strategy_tree]
             self.portfolio_dicts += [strategy_dict]
 
+        self.portfolio_strategies_mixture = None
+
     def on_game_start(self, game):
-        self.utility_estimator = self.utility_estimator_class(game, self.portfolio_trees)
+        self.portfolio_strategies_mixture = StrategiesWeightedMixture(game, self.portfolio_trees)
+        self.utility_estimator = self.utility_estimator_class(game, True)
 
     def _get_info_set_current_strategy(self, info_set):
         experts_weights = self.bandit_algorithm.get_current_expert_probabilities()
@@ -53,7 +57,12 @@ class ImplicitModellingAgent(acpc.Agent):
 
     def on_game_finished(self, game, match_state):
         expert_probabilities = self.bandit_algorithm.get_current_expert_probabilities()
-        expert_utility_estimates = self.utility_estimator.get_expert_utility_estimations(match_state, expert_probabilities)
+        self.portfolio_strategies_mixture.update_weights(expert_probabilities)
+        expert_utility_estimates = self.utility_estimator.get_utility_estimations(
+            match_state.get_state(),
+            match_state.get_viewing_player(),
+            self.portfolio_strategies_mixture.strategy,
+            self.portfolio_trees)
         self.bandit_algorithm.update_weights(expert_utility_estimates)
 
 
