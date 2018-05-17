@@ -14,6 +14,7 @@ import acpc_python_client as acpc
 
 from tools.io_util import get_new_path, read_strategy_from_file
 from tools.match_evaluation import get_player_utilities_from_log_file, get_logs_data, calculate_confidence_interval
+from utility_estimation.simple import SimpleUtilityEstimator
 from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
 
 
@@ -33,7 +34,7 @@ class UtilityEstimatorsTest(unittest.TestCase):
             'num_matches': 5,
             'num_match_hands': 2000,
             'utility_estimators': [
-                ('chips', None),
+                ('chips', SimpleUtilityEstimator),
                 ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
             ],
             # 'force_recreate_data': True,

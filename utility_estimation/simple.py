@@ -1,78 +1,74 @@
 import numpy as np
 
 from tools.agent_utils import convert_action_to_int
-from tools.game_tree.nodes import HoleCardsNode, BoardCardsNode, ActionNode
+from tools.game_tree.nodes import BoardCardsNode, ActionNode, TerminalNode
 from tools.tree_utils import get_parent_action
 from tools.hand_evaluation import get_utility
-from utility_estimation.utils import get_all_board_cards
+from utility_estimation.utils import get_all_board_cards, get_board_cards
 
 
 class SimpleUtilityEstimator():
-    def __init__(self, game, portfolio_strategies):
+    def __init__(self, game, mucking_enabled):
         if game.get_num_players() != 2:
             raise AttributeError(
                 'Only games with 2 players are supported')
 
         self.game = game
-        self.portfolio_strategies = portfolio_strategies
-        self.num_experts = len(portfolio_strategies)
 
-    def _get_reach_probabilities(self, match_state, expert_probabilities):
-        expert_reach_probabilities = np.ones(self.num_experts)
-        player_reach_probability = 1
+    def get_utility_estimations(self, state, player, sampling_strategy, evaluated_strategies=None):
+        if evaluated_strategies is None:
+            evaluated_strategies = [sampling_strategy]
 
-        state = match_state.get_state()
-        player = match_state.get_viewing_player()
+        num_players = self.game.get_num_players()
+        opponent_player = (player + 1) % 2
 
-        nodes = self.portfolio_strategies
+        num_evaluated_strategies = len(evaluated_strategies)
+
+        player_hole_cards = tuple(sorted([state.get_hole_card(player, c) for c in range(self.game.get_num_hole_cards())]))
+
+        any_player_folded = False
+        for p in range(num_players):
+            any_player_folded = any_player_folded or state.get_player_folded(p)
+
+        all_board_cards = get_all_board_cards(self.game, state)
+
+        evaluated_strategies_nodes = [node.children[player_hole_cards] for node in evaluated_strategies]
+        sampling_strategy_node = sampling_strategy.children[player_hole_cards]
+
+        evaluated_strategies_reach_probabilities = np.ones(num_evaluated_strategies)
+        sampling_strategy_reach_probability = 1
+
         round_index = 0
         action_index = 0
         while True:
-            node = nodes[0]
-            child_key = None
-            if isinstance(node, HoleCardsNode):
-                hole_cards = [state.get_hole_card(player, c) for c in range(self.game.get_num_hole_cards())]
-                child_key = tuple(sorted(hole_cards))
-            elif isinstance(node, BoardCardsNode):
-                total_num_board_cards = self.game.get_total_num_board_cards(round_index)
-                round_num_board_cards = self.game.get_num_board_cards(round_index)
-                start_board_card_index = total_num_board_cards - round_num_board_cards
-                board_cards = [state.get_board_card(c) for c in range(start_board_card_index, total_num_board_cards)]
-                child_key = tuple(sorted(board_cards))
-            else:
+            node = evaluated_strategies_nodes[0]
+            if isinstance(node, BoardCardsNode):
+                new_board_cards = get_board_cards(self.game, state, round_index)
+                evaluated_strategies_nodes = [node.children[new_board_cards] for node in evaluated_strategies_nodes]
+                sampling_strategy_node = sampling_strategy_node.children[new_board_cards]
+            elif isinstance(node, ActionNode):
                 action = convert_action_to_int(state.get_action_type(round_index, action_index))
                 if node.player == player:
-                    player_reach_prob_multiplier = 0
-                    for i in range(self.num_experts):
-                        expert_action_probability = nodes[i].strategy[action]
-                        expert_reach_probabilities[i] *= expert_action_probability
-                        player_reach_prob_multiplier += expert_action_probability * expert_probabilities[i]
-                    player_reach_probability *= player_reach_prob_multiplier
-                child_key = action
+                    sampling_strategy_reach_probability *= sampling_strategy_node.strategy[action]
+                    for i in range(num_evaluated_strategies):
+                        evaluated_strategies_reach_probabilities[i] *= evaluated_strategies_nodes[i].strategy[action]
 
                 action_index += 1
                 if action_index == state.get_num_actions(round_index):
                     round_index += 1
                     action_index = 0
-                if round_index > state.get_round():
-                    break
-            nodes = [node.children[child_key] for node in nodes]
-
-        return player_reach_probability, expert_reach_probabilities
-
-    def _get_match_state_player_utility(self, match_state):
-        num_players = self.game.get_num_players()
-        state = match_state.get_state()
-        hole_cards = [
-            [state.get_hole_card(p, c) for c in range(self.game.get_num_hole_cards())]
-            for p in range(num_players)]
-
-        board_cards = get_all_board_cards(self.game, state)
-        players_folded = [state.get_player_folded(p) for p in range(num_players)]
-        pot_commitment = [state.get_spent(p) for p in range(num_players)]
-        return get_utility(hole_cards, board_cards, players_folded, pot_commitment)[match_state.get_viewing_player()]
-
-    def get_expert_utility_estimations(self, match_state, expert_probabilities):
-        player_reach_probability, expert_reach_probabilities = self._get_reach_probabilities(match_state, expert_probabilities)
-        utility = self._get_match_state_player_utility(match_state)
-        return utility * (expert_reach_probabilities / player_reach_probability)
+                evaluated_strategies_nodes = [node.children[action] for node in evaluated_strategies_nodes]
+                sampling_strategy_node = sampling_strategy_node.children[action]
+            elif isinstance(node, TerminalNode):
+                players_folded = [state.get_player_folded(p) for p in range(num_players)]
+                if players_folded[player]:
+                    utility = -node.pot_commitment[player]
+                else:
+                    opponent_hole_cards = [state.get_hole_card(opponent_player, c) for c in range(self.game.get_num_hole_cards())]
+                    hole_cards = [player_hole_cards if p == player else opponent_hole_cards for p in range(num_players)]
+                    utility = get_utility(
+                        hole_cards,
+                        all_board_cards,
+                        players_folded,
+                        node.pot_commitment)[player]
+                return utility * (evaluated_strategies_reach_probabilities / sampling_strategy_reach_probability)
