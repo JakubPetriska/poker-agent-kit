@@ -23,9 +23,9 @@ cd ${ACPC_CLIENT_DIR}
 TIMESTAMP=$(date +%s)
 
 eval ./scripts/_start_dealer_and_player_1.pl \
-  "${WORKSPACE_DIR}/$2" \
+  "'""${WORKSPACE_DIR}/$2""'" \
   ${GAME_FILE_PATH} \
   3000 \
   ${TIMESTAMP} \
-  $3 "${WORKSPACE_DIR}/$4" \
-  $5
+  "'""$3""'" "'""${WORKSPACE_DIR}/${4}""'" \
+  "'""$5""'"
