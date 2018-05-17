@@ -15,9 +15,12 @@ def get_player_final_utilities_from_log_file(log_file_path):
     raise AttributeError('Log file does not contain SCORE line')
 
 
-def get_player_utilities_from_log_file(log_file_path):
+def get_player_utilities_from_log_file(log_file_path, game_file_path=None, utility_estimator=None, player_strategies=None):
     player_names = None
     num_hands = 0
+
+    if utility_estimator is not None and game_file_path is None:
+        raise AttributeError('Game file path must be provided with utility estimator')
 
     with open(log_file_path, 'r') as strategy_file:
         for line in map(lambda line: line.strip(), strategy_file):
@@ -38,9 +41,17 @@ def get_player_utilities_from_log_file(log_file_path):
                 hand_index = int(float(line_segments[1]))
                 scores = [float(score) for score in line_segments[-2].split('|')]
                 players = line_segments[-1].split('|')
+                state = None
+                if utility_estimator is not None:
+                    state = acpc.parse_state(game_file_path, line)
                 for i, player_name in enumerate(players):
                     player_index = player_names.index(player_name)
-                    player_utilities[hand_index, player_index] = scores[i]
+                    if utility_estimator is not None and player_name in player_strategies:
+                        player_strategy = player_strategies[player_name]
+                        utility_estimates = utility_estimator.get_utility_estimations(state, i, player_strategy)
+                        player_utilities[hand_index, player_index] = utility_estimates[0]
+                    else:
+                        player_utilities[hand_index, player_index] = scores[i]
 
     return player_utilities, player_names
 

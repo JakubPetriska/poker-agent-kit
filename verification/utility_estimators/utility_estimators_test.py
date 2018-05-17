@@ -12,8 +12,9 @@ import copy
 
 import acpc_python_client as acpc
 
-from tools.io_util import get_new_path
+from tools.io_util import get_new_path, read_strategy_from_file
 from tools.match_evaluation import get_player_utilities_from_log_file, get_logs_data, calculate_confidence_interval
+from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
 
 
 FILES_PATH = 'verification/utility_estimators'
@@ -26,14 +27,21 @@ class UtilityEstimatorsTest(unittest.TestCase):
         self.run_evaluation({
             'game_file_path': 'games/leduc.limit.2p.game',
             'agents': [
-                ('Equilibrium_1', 'strategies/leduc.limit.2p-equilibrium-agent.sh'),
+                ('Equilibrium_1', 'strategies/leduc.limit.2p-equilibrium-agent.sh', 'strategies/leduc.limit.2p-equilibrium.strategy'),
                 ('Equilibrium_2', 'strategies/leduc.limit.2p-equilibrium-agent.sh'),
             ],
             'num_matches': 5,
             'num_match_hands': 2000,
+            'utility_estimators': [
+                ('chips', None),
+                ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
+            ],
+            # 'force_recreate_data': True,
         })
 
     def run_evaluation(self, test_spec):
+        print()
+
         workspace_dir = os.getcwd()
 
         game_file_path = workspace_dir + '/' + test_spec['game_file_path']
@@ -52,16 +60,18 @@ class UtilityEstimatorsTest(unittest.TestCase):
         test_directory = '%s/%s/test-[%s]-%sx%s' % (workspace_dir, FILES_PATH, ';'.join(map(lambda a: a[0], agents)), num_matches, num_match_hands)
         test_data_directory = '%s/data' % test_directory
 
+        force_recreate_data = test_spec['force_recreate_data'] if 'force_recreate_data' in test_spec else False
         data_created = True
-        if os.path.exists(test_directory):
-            for i in range(num_matches):
-                if not os.path.exists('%s/match_%s' % (test_data_directory, i)):
-                    data_created = False
-                    break
-        else:
-            data_created = False
+        if not force_recreate_data:
+            if os.path.exists(test_directory):
+                for i in range(num_matches):
+                    if not os.path.exists('%s/match_%s' % (test_data_directory, i)):
+                        data_created = False
+                        break
+            else:
+                data_created = False
 
-        if not data_created:
+        if not data_created or force_recreate_data:
             if os.path.exists(test_data_directory):
                 shutil.rmtree(test_data_directory)
             for i in range(num_matches):
@@ -108,6 +118,7 @@ class UtilityEstimatorsTest(unittest.TestCase):
                     stdout=subprocess.PIPE)
                 proc.stdout.readline().decode('utf-8').strip()
 
+            print('Data created')
 
         log_file_paths = []
         for i in range(num_matches):
@@ -115,20 +126,35 @@ class UtilityEstimatorsTest(unittest.TestCase):
                 '%s/match_%s/normal.log' % (test_data_directory, i),
                 '%s/match_%s/reversed.log' % (test_data_directory, i),
             ]
-        log_readings = [
-            get_player_utilities_from_log_file(log_file_path)
-            for log_file_path in log_file_paths]
 
-        data, _ = get_logs_data(*log_readings)
+        agent_strategies = {}
+        for agent in agents:
+            if len(agent) >= 3:
+                strategy, _ = read_strategy_from_file(game_file_path, agent[2])
+                agent_strategies[agent[0]] = strategy
 
-        output_table = [[None for j in range(3)]]
+        utility_estimators = test_spec['utility_estimators']
+        output_table = [[None for j in range(3)] for i in range(len(utility_estimators))]
+        for i, utility_estimator_spec in enumerate(utility_estimators):
+            utility_estimator_name, utility_estimator_class = utility_estimator_spec
+            utility_estimator_instance = None if utility_estimator_class is None else utility_estimator_class(game, False)
+            log_readings = [
+                get_player_utilities_from_log_file(
+                    log_file_path,
+                    game_file_path=game_file_path,
+                    utility_estimator=utility_estimator_instance,
+                    player_strategies=agent_strategies)
+                for log_file_path in log_file_paths]
 
-        output_table[0][0] = 'chips'
-        means = np.mean(data, axis=0)
-        stds = np.std(data, axis=0)
+            data, player_names = get_logs_data(*log_readings)
+            player_zero_index = player_names.index(agents[0][0])
 
-        output_table[0][1] = means[0]
-        output_table[0][2] = stds[0]
+            output_table[i][0] = utility_estimator_name
+            means = np.mean(data, axis=0)
+            stds = np.std(data, axis=0)
+
+            output_table[i][1] = means[player_zero_index]
+            output_table[i][2] = stds[player_zero_index]
 
         print()
         print(tabulate(output_table, headers=['mean', 'SD'], tablefmt='grid'))
