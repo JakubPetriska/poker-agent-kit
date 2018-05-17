@@ -204,9 +204,20 @@ class BuildPortfolioTest(unittest.TestCase):
             output_file_dir = os.path.dirname(output_file_path)
             if not os.path.exists(output_file_dir):
                 os.makedirs(output_file_dir)
+
+            opponent_strategy = opponents[response_index]
+            opponent_exploitability = exp.evaluate(opponent_strategy)
+            response_exploitability = exp.evaluate(response_strategy)
+            response_utility_vs_opponent = exp.evaluate(opponent_strategy, response_strategy)
+
             write_strategy_to_file(
                 response_strategy,
-                output_file_path)
+                output_file_path,
+                [
+                    'Opponent exploitability: %s' % opponent_exploitability,
+                    'Response exploitability: %s' % response_exploitability,
+                    'Response value vs opponent: %s' % response_utility_vs_opponent,
+                ])
 
         responses_to_train_strategies = train_portfolio_responses(
             game_file_path,
