@@ -88,6 +88,39 @@ class AivatUtilityEstimator():
         evaluated_strategies_reach_probabilities = np.ones([num_evaluated_strategies, num_nodes])
         sampling_strategy_reach_probabilities = np.ones(num_nodes)
 
+        # Calculate correction term for hole cards
+        histories_actions_utilities = {}
+        for i in range(num_nodes):
+            history_actions_utilities = {}
+            histories_actions_utilities[i] = history_actions_utilities
+            for a in filter(lambda a: a != possible_player_hole_cards[i], sampling_strategy.children):
+                nodes_tmp = [None, None]
+                nodes_tmp[player] = sampling_strategy_nodes[i]
+                nodes_tmp[opponent_player] = sampling_strategy.children[a]
+                key = ';'.join(map(lambda m: str(m), nodes_tmp))
+                history_actions_utilities[a] = self.utilities_dict[key][player]
+
+        history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+        current_history_expected_value = 0
+        for i in range(num_nodes):
+            for a in filter(lambda a: a != possible_player_hole_cards[i], sampling_strategy.children):
+                current_history_expected_value += histories_actions_utilities[i][a] \
+                    * sampling_strategy_reach_probabilities[i] / num_nodes
+
+        for i in range(num_nodes):
+            sampling_strategy_reach_probabilities[i] /= num_nodes
+            for j in range(num_evaluated_strategies):
+                evaluated_strategies_reach_probabilities[j, i] /= num_nodes
+
+        next_history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+        next_history_expected_value = 0
+        for i in range(num_nodes):
+            next_history_expected_value += histories_actions_utilities[i][tuple(sorted(opponent_hole_cards))] \
+                * sampling_strategy_reach_probabilities[i]
+        utilities[0] += \
+            (current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
+            - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)
+
         def add_terminals_to_utilities(pot_commitment, players_folded, sampling_strategy_reach_probabilities, evaluated_strategies_reach_probabilities):
             nonlocal utilities
             nonlocal player
@@ -124,6 +157,7 @@ class AivatUtilityEstimator():
 
                 num_board_cards = len(opponent_node.children)
 
+                # Calculate correction term for board cards
                 histories_actions_utilities = {}
                 for i in range(num_nodes):
                     history_actions_utilities = {}
@@ -163,7 +197,7 @@ class AivatUtilityEstimator():
             elif isinstance(node, ActionNode):
                 action = convert_action_to_int(state.get_action_type(round_index, action_index))
                 if node.player == player:
-                    # Calculate correction term and add it to utility
+                    # Calculate correction term for player actions
                     histories_actions_utilities = {}
                     for i in range(num_nodes):
                         history_actions_utilities = {}
