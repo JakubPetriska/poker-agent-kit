@@ -27,8 +27,23 @@ class AivatUtilityEstimator():
                 '"equilibirum_strategy_path" argument not provided')
 
         equilibirum_strategy_path = args['equilibirum_strategy_path']
-        self.equilibirum_strategy, _ = read_strategy_from_file(game, equilibirum_strategy_path)
-        self.player_utility = PlayerUtility(game)
+        equilibirum_strategy, _ = read_strategy_from_file(game, equilibirum_strategy_path)
+        utilities_dict = {}
+
+        def callback(nodes, utilities):
+            nonlocal utilities_dict
+
+            key = ';'.join(map(lambda m: str(m), nodes))
+            if key not in utilities_dict:
+                utilities_dict[key] = utilities
+
+        PlayerUtility(game).get_player_utilities(
+            [equilibirum_strategy] * 2,
+            [],
+            [],
+            [False] * 2,
+            callback)
+        self.utilities_dict = utilities_dict
 
     def get_utility_estimations(self, state, player, sampling_strategy, evaluated_strategies=None):
         if evaluated_strategies is None:
@@ -67,8 +82,7 @@ class AivatUtilityEstimator():
             for expert_node in evaluated_strategies]
         sampling_strategy_nodes = [sampling_strategy.children[hole_cards] for hole_cards in possible_player_hole_cards]
 
-        opponent_equilibirum_strategy_node = self.equilibirum_strategy.children[tuple(sorted(opponent_hole_cards))]
-        player_equilibirum_strategy_nodes = [self.equilibirum_strategy.children[hole_cards] for hole_cards in possible_player_hole_cards]
+        opponent_node = sampling_strategy.children[tuple(sorted(opponent_hole_cards))]
 
         num_nodes = len(possible_player_hole_cards)
         evaluated_strategies_reach_probabilities = np.ones([num_evaluated_strategies, num_nodes])
@@ -111,8 +125,7 @@ class AivatUtilityEstimator():
                 new_board_cards = get_board_cards(self.game, state, round_index)
                 nodes = [[expert_node.children[new_board_cards] for expert_node in expert_nodes] for expert_nodes in nodes]
                 sampling_strategy_nodes = [node.children[new_board_cards] for node in sampling_strategy_nodes]
-                opponent_equilibirum_strategy_node = opponent_equilibirum_strategy_node.children[new_board_cards]
-                player_equilibirum_strategy_nodes = [node.children[new_board_cards] for node in player_equilibirum_strategy_nodes]
+                opponent_node = opponent_node.children[new_board_cards]
             elif isinstance(node, ActionNode):
                 action = convert_action_to_int(state.get_action_type(round_index, action_index))
                 if node.player == player:
@@ -123,23 +136,10 @@ class AivatUtilityEstimator():
                         histories_actions_utilities[h] = history_actions_utilities
                         for a in node.children:
                             nodes_tmp = [None, None]
-                            nodes_tmp[player] = player_equilibirum_strategy_nodes[h].children[a]
-                            nodes_tmp[opponent_player] = opponent_equilibirum_strategy_node.children[a]
-
-                            hole_cards = [None, None]
-                            hole_cards[player] = possible_player_hole_cards[h]
-                            hole_cards[opponent_player] = opponent_hole_cards
-
-                            board_cards = []
-                            for r in range(round_index + 1):
-                                board_cards = flatten(board_cards, get_board_cards(self.game, state, r))
-
-                            players_folded = [False for p in range(2)]
-                            if a == 0:
-                                players_folded[player] = True
-
-                            utility_estimates = self.player_utility._get_player_utilities(nodes_tmp, hole_cards, board_cards, players_folded)
-                            history_actions_utilities[a] = utility_estimates[player]
+                            nodes_tmp[player] = sampling_strategy_nodes[h].children[a]
+                            nodes_tmp[opponent_player] = opponent_node.children[a]
+                            key = ';'.join(map(lambda m: str(m), nodes_tmp))
+                            history_actions_utilities[a] = self.utilities_dict[key][player]
 
                     history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
                     current_history_expected_value = 0
@@ -170,8 +170,7 @@ class AivatUtilityEstimator():
                     action_index = 0
                 nodes = [[expert_node.children[action] for expert_node in expert_nodes] for expert_nodes in nodes]
                 sampling_strategy_nodes = [node.children[action] for node in sampling_strategy_nodes]
-                opponent_equilibirum_strategy_node = opponent_equilibirum_strategy_node.children[action]
-                player_equilibirum_strategy_nodes = [node.children[action] for node in player_equilibirum_strategy_nodes]
+                opponent_node = opponent_node.children[action]
             elif isinstance(node, TerminalNode):
                 players_folded = [state.get_player_folded(p) for p in range(num_players)]
                 add_terminals_to_utilities(node.pot_commitment, players_folded, sampling_strategy_reach_probabilities, evaluated_strategies_reach_probabilities)
