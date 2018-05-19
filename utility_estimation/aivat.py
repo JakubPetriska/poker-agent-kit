@@ -111,9 +111,7 @@ class AivatUtilityEstimator():
 
         def update_reach_proabilities(action, sampling_strategy_nodes, nodes, sampling_strategy_reach_probabilities, evaluated_strategies_reach_probabilities):
             for i in range(num_nodes):
-                if sampling_strategy_reach_probabilities is not None:
-                    sampling_strategy_reach_probabilities[i] *= sampling_strategy_nodes[i].strategy[action]
-
+                sampling_strategy_reach_probabilities[i] *= sampling_strategy_nodes[i].strategy[action]
                 for j in range(num_evaluated_strategies):
                     evaluated_strategies_reach_probabilities[j, i] *= nodes[j][i].strategy[action]
 
@@ -123,6 +121,42 @@ class AivatUtilityEstimator():
             node = nodes[0][0]
             if isinstance(node, BoardCardsNode):
                 new_board_cards = get_board_cards(self.game, state, round_index)
+
+                num_board_cards = len(opponent_node.children)
+
+                histories_actions_utilities = {}
+                for i in range(num_nodes):
+                    history_actions_utilities = {}
+                    histories_actions_utilities[i] = history_actions_utilities
+                    for a in filter(lambda a: a in sampling_strategy_nodes[i].children, opponent_node.children):
+                        nodes_tmp = [None, None]
+                        nodes_tmp[player] = sampling_strategy_nodes[i].children[a]
+                        nodes_tmp[opponent_player] = opponent_node.children[a]
+                        key = ';'.join(map(lambda m: str(m), nodes_tmp))
+                        history_actions_utilities[a] = self.utilities_dict[key][player]
+
+                history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                current_history_expected_value = 0
+                for i in range(num_nodes):
+                    for a in filter(lambda a: a in sampling_strategy_nodes[i].children, opponent_node.children):
+                        current_history_expected_value += histories_actions_utilities[i][a] \
+                            * sampling_strategy_reach_probabilities[i] / num_board_cards
+
+                for i in range(num_nodes):
+                    sampling_strategy_reach_probabilities[i] /= num_board_cards
+                    for j in range(num_evaluated_strategies):
+                        evaluated_strategies_reach_probabilities[j, i] /= num_board_cards
+
+                next_history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                next_history_expected_value = 0
+                for i in range(num_nodes):
+                    next_history_expected_value += histories_actions_utilities[i][new_board_cards] \
+                        * sampling_strategy_reach_probabilities[i]
+                utilities[0] += \
+                    (current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
+                    - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)
+
+
                 nodes = [[expert_node.children[new_board_cards] for expert_node in expert_nodes] for expert_nodes in nodes]
                 sampling_strategy_nodes = [node.children[new_board_cards] for node in sampling_strategy_nodes]
                 opponent_node = opponent_node.children[new_board_cards]
@@ -131,12 +165,12 @@ class AivatUtilityEstimator():
                 if node.player == player:
                     # Calculate correction term and add it to utility
                     histories_actions_utilities = {}
-                    for h in range(num_nodes):
+                    for i in range(num_nodes):
                         history_actions_utilities = {}
-                        histories_actions_utilities[h] = history_actions_utilities
+                        histories_actions_utilities[i] = history_actions_utilities
                         for a in node.children:
                             nodes_tmp = [None, None]
-                            nodes_tmp[player] = sampling_strategy_nodes[h].children[a]
+                            nodes_tmp[player] = sampling_strategy_nodes[i].children[a]
                             nodes_tmp[opponent_player] = opponent_node.children[a]
                             key = ';'.join(map(lambda m: str(m), nodes_tmp))
                             history_actions_utilities[a] = self.utilities_dict[key][player]
