@@ -16,6 +16,7 @@ from tools.io_util import get_new_path, read_strategy_from_file
 from tools.match_evaluation import get_player_utilities_from_log_file, get_logs_data, calculate_confidence_interval
 from utility_estimation.simple import SimpleUtilityEstimator
 from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
+from utility_estimation.aivat import AivatUtilityEstimator
 
 
 FILES_PATH = 'verification/utility_estimators'
@@ -24,6 +25,25 @@ ACPC_INFRASTRUCTURE_DIR = os.getcwd() + '/../acpc-python-client/acpc_infrastruct
 MATCH_SCRIPT = './play_match.pl'
 
 class UtilityEstimatorsTest(unittest.TestCase):
+    def test_kuhn_small_data(self):
+        self.run_evaluation({
+            'game_file_path': 'games/kuhn.limit.2p.game',
+            'agents': [
+                ('Equilibrium_1', 'strategies/kuhn.limit.2p-equilibrium-agent.sh', 'strategies/kuhn.limit.2p-equilibrium.strategy'),
+                ('Equilibrium_2', 'strategies/kuhn.limit.2p-equilibrium-agent.sh'),
+            ],
+            'num_matches': 5,
+            'num_match_hands': 2000,
+            'utility_estimators': [
+                ('chips', SimpleUtilityEstimator),
+                ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
+                ('AIVAT', AivatUtilityEstimator, {
+                    'equilibirum_strategy_path': 'strategies/kuhn.limit.2p-equilibrium.strategy'
+                }),
+            ],
+            # 'force_recreate_data': True,
+        })
+
     def test_leduc_small_data(self):
         self.run_evaluation({
             'game_file_path': 'games/leduc.limit.2p.game',
@@ -36,6 +56,9 @@ class UtilityEstimatorsTest(unittest.TestCase):
             'utility_estimators': [
                 ('chips', SimpleUtilityEstimator),
                 ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
+                ('AIVAT', AivatUtilityEstimator, {
+                    'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+                }),
             ],
             # 'force_recreate_data': True,
         })
@@ -58,7 +81,9 @@ class UtilityEstimatorsTest(unittest.TestCase):
         if game.get_num_players() != len(agents):
             raise AttributeError('Wrong number of players')
 
-        test_directory = '%s/%s/test-[%s]-%sx%s' % (workspace_dir, FILES_PATH, ';'.join(map(lambda a: a[0], agents)), num_matches, num_match_hands)
+        game_name = game_file_path.split('/')[-1][:-len('.game')]
+
+        test_directory = '%s/%s/test-%s-[%s]-%sx%s' % (workspace_dir, FILES_PATH, game_name, ';'.join(map(lambda a: a[0], agents)), num_matches, num_match_hands)
         test_data_directory = '%s/data' % test_directory
 
         force_recreate_data = test_spec['force_recreate_data'] if 'force_recreate_data' in test_spec else False
@@ -137,8 +162,18 @@ class UtilityEstimatorsTest(unittest.TestCase):
         utility_estimators = test_spec['utility_estimators']
         output_table = [[None for j in range(3)] for i in range(len(utility_estimators))]
         for i, utility_estimator_spec in enumerate(utility_estimators):
-            utility_estimator_name, utility_estimator_class = utility_estimator_spec
-            utility_estimator_instance = None if utility_estimator_class is None else utility_estimator_class(game, False)
+            utility_estimator_name = utility_estimator_spec[0]
+            utility_estimator_class = utility_estimator_spec[1]
+            utility_estimator_instance = None
+            if utility_estimator_class is not None:
+                if len(utility_estimator_spec) == 2:
+                    utility_estimator_instance = utility_estimator_class(game, False)
+                elif len(utility_estimator_spec) > 2:
+                    utility_estimator_args = utility_estimator_spec[2]
+                    utility_estimator_instance = utility_estimator_class(
+                        game,
+                        False,
+                        **utility_estimator_args)
             log_readings = [
                 get_player_utilities_from_log_file(
                     log_file_path,

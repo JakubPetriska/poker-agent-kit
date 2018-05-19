@@ -60,7 +60,7 @@ def write_strategy_to_file(tree, output_path, prefix_lines=None):
             file.write(line)
 
 
-def read_strategy_from_file(game_file_path, strategy_file_path):
+def read_strategy_from_file(game, strategy_file_path):
     strategy = {}
     with open(strategy_file_path, 'r') as strategy_file:
         for line in strategy_file:
@@ -69,11 +69,11 @@ def read_strategy_from_file(game_file_path, strategy_file_path):
             line_split = line.split(' ')
             strategy[line_split[0]] = [float(probStr) for probStr in line_split[1:4]]
 
-    if not game_file_path:
+    if not game:
         return strategy
 
-    game = acpc.read_game_file(game_file_path)
-    strategy_tree = GameTreeBuilder(game, StrategyTreeNodeProvider()).build_tree()
+    game_instance = acpc.read_game_file(game) if isinstance(game, str) else game
+    strategy_tree = GameTreeBuilder(game_instance, StrategyTreeNodeProvider()).build_tree()
 
     def on_node(node):
         if isinstance(node, ActionNode):
