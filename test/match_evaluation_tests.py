@@ -11,9 +11,9 @@ class MatchEvaluationTests(unittest.TestCase):
         final_scores, final_scores_player_names = get_player_final_utilities_from_log_file(log_file_path)
         utilities, utilities_player_names = get_player_utilities_from_log_file(log_file_path)
 
-        self.assertEqual(utilities.shape, (50000, 2))
+        self.assertEqual(utilities.shape, (50000, 2, 1))
         self.assertEqual(final_scores_player_names, utilities_player_names)
-        self.assertTrue(np.all(final_scores == np.sum(utilities, axis=0)))
+        self.assertTrue(np.all([[score] for score in final_scores] == np.sum(utilities, axis=0)))
 
     def test_confidence_interval_calculation(self):
         log_files_paths = [
@@ -23,7 +23,7 @@ class MatchEvaluationTests(unittest.TestCase):
         log_readings = [get_player_utilities_from_log_file(log_file_path) for log_file_path in log_files_paths]
         data, _ = get_logs_data(*log_readings)
         means, interval_half_size, lower_bounds, upper_bounds = calculate_confidence_interval(data, 0.95)
-        self.assertEqual(means.tolist(), [1, -1])
+        self.assertEqual(means.tolist(), [[1], [-1]])
 
         sigma = np.sqrt(8)
         sme = sigma / np.sqrt(10)
