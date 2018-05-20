@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import os
 
 import acpc_python_client as acpc
 
@@ -10,6 +11,7 @@ from implicit_modelling.strategies_weighted_mixeture import StrategiesWeightedMi
 from implicit_modelling.exp3g import Exp3G
 from utility_estimation.simple import SimpleUtilityEstimator
 from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
+from utility_estimation.aivat import AivatUtilityEstimator
 
 
 class ImplicitModellingAgent(acpc.Agent):
@@ -77,12 +79,25 @@ if __name__ == "__main__":
 
     utility_estimator_type = sys.argv[4]
     utility_estimator_class = None
+    utility_estimator_args = None
     if utility_estimator_type == 'none':
         utility_estimator_class = SimpleUtilityEstimator
     elif utility_estimator_type == 'imaginary_observations':
         utility_estimator_class = ImaginaryObservationsUtilityEstimator
+    elif utility_estimator_type == 'aivat':
+        utility_estimator_class = AivatUtilityEstimator
+
+        game_name = os.path.basename(sys.argv[1])[:-len('.game')]
+        equilibrium_strategy_path = '%s/../strategies/%s-equilibrium.strategy' % (os.path.dirname(sys.argv[1]), game_name)
+        utility_estimator_args = {
+            'equilibirum_strategy_path': equilibrium_strategy_path,
+        }
     else:
         raise AttributeError('Invalid utility estimation method type %s' % utility_estimator_type)
 
     client = acpc.Client(sys.argv[1], sys.argv[2], sys.argv[3])
-    client.play(ImplicitModellingAgent(sys.argv[1], sys.argv[5:], utility_estimator_class=utility_estimator_class))
+    client.play(ImplicitModellingAgent(
+        sys.argv[1],
+        sys.argv[5:],
+        utility_estimator_class=utility_estimator_class,
+        utility_estimator_args=utility_estimator_args))
