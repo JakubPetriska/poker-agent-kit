@@ -19,12 +19,16 @@ class ImplicitModellingAgent(acpc.Agent):
             portfolio_strategy_files_paths,
             exp3g_gamma=0.02,
             exp3g_eta=0.025,
-            utility_estimator_class=SimpleUtilityEstimator):
+            utility_estimator_class=SimpleUtilityEstimator,
+            utility_estimator_args=None):
         super().__init__()
         self.portfolio_size = len(portfolio_strategy_files_paths)
         self.bandit_algorithm = Exp3G(exp3g_gamma, exp3g_eta, self.portfolio_size)
-        self.utility_estimator_class = utility_estimator_class
-        self.utility_estimator = None
+        game = acpc.read_game_file(game_file_path)
+        if utility_estimator_args is None:
+            self.utility_estimator = utility_estimator_class(game, True)
+        else:
+            self.utility_estimator = utility_estimator_class(game, True, **utility_estimator_args)
 
         self.portfolio_trees = []
         self.portfolio_dicts = []
@@ -33,11 +37,10 @@ class ImplicitModellingAgent(acpc.Agent):
             self.portfolio_trees += [strategy_tree]
             self.portfolio_dicts += [strategy_dict]
 
-        self.portfolio_strategies_mixture = None
+        self.portfolio_strategies_mixture = StrategiesWeightedMixture(game, self.portfolio_trees)
 
     def on_game_start(self, game):
-        self.portfolio_strategies_mixture = StrategiesWeightedMixture(game, self.portfolio_trees)
-        self.utility_estimator = self.utility_estimator_class(game, True)
+        pass
 
     def _get_info_set_current_strategy(self, info_set):
         experts_weights = self.bandit_algorithm.get_current_expert_probabilities()
@@ -63,7 +66,8 @@ class ImplicitModellingAgent(acpc.Agent):
             match_state.get_viewing_player(),
             self.portfolio_strategies_mixture.strategy,
             self.portfolio_trees)
-        self.bandit_algorithm.update_weights(expert_utility_estimates)
+        if expert_utility_estimates is not None:
+            self.bandit_algorithm.update_weights(expert_utility_estimates)
 
 
 if __name__ == "__main__":

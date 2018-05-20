@@ -17,6 +17,7 @@ from implicit_modelling.implicit_modelling_agent import ImplicitModellingAgent
 from tools.game_utils import get_big_blind_size
 from utility_estimation.simple import SimpleUtilityEstimator
 from utility_estimation.imaginary_observations import ImaginaryObservationsUtilityEstimator
+from utility_estimation.aivat import AivatUtilityEstimator
 
 
 TEST_DIRECTORY = 'verification/implicit_agent'
@@ -41,6 +42,16 @@ class ImplicitAgentTest(unittest.TestCase):
             'portfolio_name': 'kuhn_simple_portfolio',
             'game_file_path': 'games/kuhn.limit.2p.game',
             'utility_estimator_class': ImaginaryObservationsUtilityEstimator,
+        })
+
+    def test_kuhn_simple_portfolio_aivat(self):
+        self.evaluate_agent({
+            'portfolio_name': 'kuhn_simple_portfolio',
+            'game_file_path': 'games/kuhn.limit.2p.game',
+            'utility_estimator_class': AivatUtilityEstimator,
+            'utility_estimator_args': {
+                'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+            }
         })
 
     def test_leduc_simple_portfolio(self):
@@ -104,7 +115,14 @@ class ImplicitAgentTest(unittest.TestCase):
             client = acpc.Client(game_file_path, '127.0.1.1', port_number)
 
             full_response_strategy_paths = ['%s/%s' % (portfolio_directory, s) for s in response_strategy_paths]
-            client.play(ImplicitModellingAgent(game_file_path, full_response_strategy_paths, utility_estimator_class=test_spec['utility_estimator_class']))
+
+            utility_estimator_args = test_spec['utility_estimator_args'] if 'utility_estimator_args' in test_spec else None
+
+            client.play(ImplicitModellingAgent(
+                game_file_path,
+                full_response_strategy_paths,
+                utility_estimator_class=test_spec['utility_estimator_class'],
+                utility_estimator_args=utility_estimator_args))
 
             scores_line = proc.stdout.readline().decode('utf-8').strip()
             agent_score = float(scores_line.split(':')[1].split('|')[1])

@@ -19,9 +19,6 @@ class AivatUtilityEstimator():
         self.game = game
         self.mucking_enabled = mucking_enabled
 
-        if mucking_enabled:
-            raise AttributeError('Mucking not yet supported')
-
         if 'equilibirum_strategy_path' not in args:
             raise AttributeError(
                 '"equilibirum_strategy_path" argument not provided')
@@ -61,6 +58,9 @@ class AivatUtilityEstimator():
             any_player_folded = any_player_folded or state.get_player_folded(p)
 
         all_board_cards = get_all_board_cards(self.game, state)
+
+        if any_player_folded and self.mucking_enabled:
+            return None
 
         opponent_hole_cards = None
         possible_player_hole_cards = None
