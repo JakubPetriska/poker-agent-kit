@@ -48,8 +48,6 @@ class AivatUtilityEstimator():
     def get_utility_estimations(self, state, player, sampling_strategy, evaluated_strategies=None):
         if evaluated_strategies is None:
             evaluated_strategies = [sampling_strategy]
-        else:
-            raise AttributeError('AIVAT does not support importance sampling so far')
 
         num_players = self.game.get_num_players()
         opponent_player = (player + 1) % 2
@@ -117,7 +115,7 @@ class AivatUtilityEstimator():
         for i in range(num_nodes):
             next_history_expected_value += histories_actions_utilities[i][tuple(sorted(opponent_hole_cards))] \
                 * sampling_strategy_reach_probabilities[i]
-        utilities[0] += \
+        utilities += \
             (current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
             - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)
 
@@ -170,6 +168,8 @@ class AivatUtilityEstimator():
                         history_actions_utilities[a] = self.utilities_dict[key][player]
 
                 history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                importance_sampling_ratio = np.sum(evaluated_strategies_reach_probabilities, axis=1) / history_sampling_strategy_reach_probabilities_sum
+
                 current_history_expected_value = 0
                 for i in range(num_nodes):
                     for a in filter(lambda a: a in sampling_strategy_nodes[i].children, opponent_node.children):
@@ -186,9 +186,9 @@ class AivatUtilityEstimator():
                 for i in range(num_nodes):
                     next_history_expected_value += histories_actions_utilities[i][new_board_cards] \
                         * sampling_strategy_reach_probabilities[i]
-                utilities[0] += \
-                    (current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
-                    - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)
+                utilities += \
+                    ((current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
+                    - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)) * importance_sampling_ratio
 
 
                 nodes = [[expert_node.children[new_board_cards] for expert_node in expert_nodes] for expert_nodes in nodes]
@@ -210,6 +210,8 @@ class AivatUtilityEstimator():
                             history_actions_utilities[a] = self.utilities_dict[key][player]
 
                     history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                    importance_sampling_ratio = np.sum(evaluated_strategies_reach_probabilities, axis=1) / history_sampling_strategy_reach_probabilities_sum
+
                     current_history_expected_value = 0
                     for i in range(num_nodes):
                         for a in sampling_strategy_nodes[i].children:
@@ -228,9 +230,9 @@ class AivatUtilityEstimator():
                     for i in range(num_nodes):
                         next_history_expected_value += histories_actions_utilities[i][action] \
                             * sampling_strategy_reach_probabilities[i]
-                    utilities[0] += \
-                        (current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
-                        - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)
+                    utilities += \
+                        ((current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
+                        - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)) * importance_sampling_ratio
 
                 action_index += 1
                 if action_index == state.get_num_actions(round_index):

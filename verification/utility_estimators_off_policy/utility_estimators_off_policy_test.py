@@ -58,9 +58,9 @@ class UtilityEstimatorsOffPolicyTest(unittest.TestCase):
             'utility_estimators': [
                 ('chips', SimpleUtilityEstimator),
                 ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
-                # ('AIVAT', AivatUtilityEstimator, {
-                #     'equilibirum_strategy_path': 'strategies/kuhn.limit.2p-equilibrium.strategy'
-                # }),
+                ('AIVAT', AivatUtilityEstimator, {
+                    'equilibirum_strategy_path': 'strategies/kuhn.limit.2p-equilibrium.strategy'
+                }),
             ],
             # 'force_recreate_data': True,
         })
@@ -81,9 +81,9 @@ class UtilityEstimatorsOffPolicyTest(unittest.TestCase):
             'utility_estimators': [
                 ('chips', SimpleUtilityEstimator),
                 ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
-                # ('AIVAT', AivatUtilityEstimator, {
-                #     'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
-                # }),
+                ('AIVAT', AivatUtilityEstimator, {
+                    'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+                }),
             ],
             # 'force_recreate_data': True,
         })
@@ -104,9 +104,9 @@ class UtilityEstimatorsOffPolicyTest(unittest.TestCase):
             'utility_estimators': [
                 ('chips', SimpleUtilityEstimator),
                 ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
-                # ('AIVAT', AivatUtilityEstimator, {
-                #     'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
-                # }),
+                ('AIVAT', AivatUtilityEstimator, {
+                    'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+                }),
             ],
             # 'force_recreate_data': True,
         })
