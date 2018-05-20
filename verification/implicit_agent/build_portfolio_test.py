@@ -42,7 +42,7 @@ AGENT_SCRIPT_REPLACE_STRINGS = [
 WARNING_COMMENT = 'This file is generated. Do not edit!'
 
 
-UTILITY_ESTIMATION_METHODS = ['none', 'imaginary_observations']
+UTILITY_ESTIMATION_METHODS = ['none', 'imaginary_observations', 'aivat']
 
 
 KUHN_EQUILIBRIUM_STRATEGY_PATH = 'strategies/kuhn.limit.2p-equilibrium.strategy'
@@ -224,6 +224,8 @@ class BuildPortfolioTest(unittest.TestCase):
                     'Response exploitability: %s' % response_exploitability,
                     'Response value vs opponent: %s' % response_utility_vs_opponent,
                 ])
+
+        print('%s responses need to be trained' % len(responses_to_train_opponents))
 
         responses_to_train_strategies = train_portfolio_responses(
             game_file_path,
