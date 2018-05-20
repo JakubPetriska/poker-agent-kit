@@ -72,11 +72,11 @@ def optimize_portfolio(
         portfolio_cut_improvement_threshold=0.05,
         log=False,
         output_directory=None):
-    if portfolio_size <= 0 \
-        and not portfolio_cut_improvement_threshold or portfolio_cut_improvement_threshold <= 0:
-        raise AttributeError('Either portfolio_size or portfolio_cut_improvement_threshold larger than 0 must be provided')
 
     num_opponents = len(opponent_strategies)
+
+    if portfolio_size == num_opponents or portfolio_cut_improvement_threshold == 0:
+        return response_strategies, range(num_opponents)
 
     game = acpc.read_game_file(game_file_path)
     exp = Exploitability(game)

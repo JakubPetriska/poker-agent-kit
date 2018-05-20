@@ -145,6 +145,23 @@ class BuildPortfolioTest(unittest.TestCase):
             'overwrite_portfolio_path': True,
         })
 
+    def test_leduc_big_build_portfolio(self):
+        tilt_probabilities = [-1, -0.8, -0.6, -0.4, 0.4, 0.6, 0.8, 1]
+        opponents = []
+        for action in Action:
+            for tilt_type in TiltType:
+                for tilt_probability in tilt_probabilities:
+                    opponents += [(action, tilt_type, tilt_probability, (100, 10, 1000, 50))]
+        self.train_and_show_results({
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
+            'portfolio_name': 'leduc_big_portfolio',
+            'parallel': True,
+            'opponent_tilt_types': opponents,
+            'overwrite_portfolio_path': True,
+            'portfolio_cut_improvement_threshold': 0,
+        })
+
     def train_and_show_results(self, test_spec):
         game_file_path = test_spec['game_file_path']
         portfolio_name = test_spec['portfolio_name']
@@ -238,12 +255,21 @@ class BuildPortfolioTest(unittest.TestCase):
         for i, j in enumerate(responses_to_train_indices):
             opponent_responses[j] = responses_to_train_strategies[i]
 
-        portfolio_strategies, response_indices = optimize_portfolio(
-            game_file_path,
-            opponents,
-            opponent_responses,
-            log=True,
-            output_directory=strategies_directory)
+        if 'portfolio_cut_improvement_threshold' in test_spec:
+            portfolio_strategies, response_indices = optimize_portfolio(
+                game_file_path,
+                opponents,
+                opponent_responses,
+                portfolio_cut_improvement_threshold=test_spec['portfolio_cut_improvement_threshold'],
+                log=True,
+                output_directory=strategies_directory)
+        else:
+            portfolio_strategies, response_indices = optimize_portfolio(
+                game_file_path,
+                opponents,
+                opponent_responses,
+                log=True,
+                output_directory=strategies_directory)
 
         portfolio_size = len(portfolio_strategies)
 
