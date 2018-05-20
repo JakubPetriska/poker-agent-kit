@@ -63,6 +63,25 @@ class UtilityEstimatorsTest(unittest.TestCase):
             # 'force_recreate_data': True,
         })
 
+    def test_leduc_big_data(self):
+        self.run_evaluation({
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'agents': [
+                ('Equilibrium_1', 'strategies/leduc.limit.2p-equilibrium-agent.sh', 'strategies/leduc.limit.2p-equilibrium.strategy'),
+                ('Equilibrium_2', 'strategies/leduc.limit.2p-equilibrium-agent.sh'),
+            ],
+            'num_matches': 25,
+            'num_match_hands': 2000,
+            'utility_estimators': [
+                ('chips', SimpleUtilityEstimator),
+                ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
+                ('AIVAT', AivatUtilityEstimator, {
+                    'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+                }),
+            ],
+            # 'force_recreate_data': True,
+        })
+
     def run_evaluation(self, test_spec):
         print()
 
@@ -194,3 +213,5 @@ class UtilityEstimatorsTest(unittest.TestCase):
 
         print()
         print(tabulate(output_table, headers=['mean', 'SD'], tablefmt='grid'))
+        print()
+        print('Total num hands: %s' % data.shape[0])
