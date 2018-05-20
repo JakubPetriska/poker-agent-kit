@@ -15,7 +15,12 @@ def get_player_final_utilities_from_log_file(log_file_path):
     raise AttributeError('Log file does not contain SCORE line')
 
 
-def get_player_utilities_from_log_file(log_file_path, game_file_path=None, utility_estimator=None, player_strategies=None):
+def get_player_utilities_from_log_file(
+        log_file_path,
+        game_file_path=None,
+        utility_estimator=None,
+        player_strategies=None,
+        evaluated_strategies=None):
     player_names = None
     num_hands = 0
 
@@ -32,7 +37,8 @@ def get_player_utilities_from_log_file(log_file_path, game_file_path=None, utili
     if not player_names:
         raise AttributeError('Log file does not contain SCORE line')
 
-    player_utilities = np.zeros([num_hands, len(player_names)])
+    num_evaluated_strategies = 1 if evaluated_strategies is None else len(evaluated_strategies)
+    player_utilities = np.zeros([num_hands, len(player_names), num_evaluated_strategies])
 
     with open(log_file_path, 'r') as strategy_file:
         for line in map(lambda line: line.strip(), strategy_file):
@@ -48,8 +54,8 @@ def get_player_utilities_from_log_file(log_file_path, game_file_path=None, utili
                     player_index = player_names.index(player_name)
                     if utility_estimator is not None and player_name in player_strategies:
                         player_strategy = player_strategies[player_name]
-                        utility_estimates = utility_estimator.get_utility_estimations(state, i, player_strategy)
-                        player_utilities[hand_index, player_index] = utility_estimates[0]
+                        utility_estimates = utility_estimator.get_utility_estimations(state, i, player_strategy, evaluated_strategies)
+                        player_utilities[hand_index, player_index] = utility_estimates
                     else:
                         player_utilities[hand_index, player_index] = scores[i]
 
@@ -58,6 +64,7 @@ def get_player_utilities_from_log_file(log_file_path, game_file_path=None, utili
 def get_logs_data(*log_readings):
     num_matches = len(log_readings)
     num_match_hands = None
+    num_evaluated_strategies = None
     num_players = None
     player_names = None
     for log_reading in log_readings:
@@ -65,16 +72,19 @@ def get_logs_data(*log_readings):
         if num_match_hands is None:
             num_match_hands = utilities.shape[0]
             num_players = utilities.shape[1]
+            num_evaluated_strategies = utilities.shape[2]
             player_names = list(sorted(log_player_names))
         elif utilities.shape[0] != num_match_hands:
             raise AttributeError('Log readings must contain same number of hands')
         elif utilities.shape[1] != num_players:
             raise AttributeError('Log readings must contain same number of players')
+        elif utilities.shape[2] != num_evaluated_strategies:
+            raise AttributeError('Log readings must contain same number of evaluated strategies')
         elif list(sorted(log_player_names)) != player_names:
             raise AttributeError('Log readings must contain same set of players')
 
     num_total_hands = num_matches * num_match_hands
-    data = np.empty([num_total_hands, num_players])
+    data = np.empty([num_total_hands, num_players, num_evaluated_strategies])
     for i, log_reading in enumerate(log_readings):
         utilities, log_player_names = log_reading
         for p in range(num_players):
