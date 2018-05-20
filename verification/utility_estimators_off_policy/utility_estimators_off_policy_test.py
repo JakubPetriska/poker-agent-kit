@@ -99,8 +99,8 @@ class UtilityEstimatorsOffPolicyTest(unittest.TestCase):
                 (Action.CALL, TiltType.ADD, 0.5),
                 (Action.RAISE, TiltType.ADD, 0.75),
             ],
-            'num_matches': 17,
-            'num_match_hands': 3000,
+            'num_matches': 25,
+            'num_match_hands': 2000,
             'utility_estimators': [
                 ('chips', SimpleUtilityEstimator),
                 ('imaginary_observations', ImaginaryObservationsUtilityEstimator),
@@ -316,7 +316,9 @@ class UtilityEstimatorsOffPolicyTest(unittest.TestCase):
         prin()
         prin('Total num hands: %s' % data.shape[0])
 
-        output_log_path = get_new_path('%s/output' % test_directory, '.log')
+        output_log_path = get_new_path(
+            '%s/output-%sx%s' % (test_directory, num_matches, num_match_hands),
+            '.log')
         with open(output_log_path, 'w') as file:
             for line in output:
                 file.write(line + '\n')
