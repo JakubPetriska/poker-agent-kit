@@ -61,6 +61,18 @@ class AcpcTournamentTest(unittest.TestCase):
             'max_confidence_interval_half_size': 15 / 1000,
         })
 
+    def test_leduc_small_portfolio_tournament_medium(self):
+        portfolio_path = 'verification/implicit_agent/portfolios/leduc_small_portfolio'
+        implicit_agents, opponent_agents = self._get_portfolio_agents(portfolio_path)
+        self.run_tournament({
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'name': 'leduc_small_portfolio-medium',
+            'row_agents': implicit_agents,
+            'column_agents': implicit_agents[1:] + opponent_agents,
+            'confidence': 0.95,
+            'max_confidence_interval_half_size': 15 / 1000,
+        })
+
     def _get_portfolio_agents(self, portfolio_path):
         implicit_agents = []
         opponent_agents = []
@@ -109,6 +121,9 @@ class AcpcTournamentTest(unittest.TestCase):
 
         agent_pairs_evaluated = []
 
+        env = os.environ.copy()
+        env['PATH'] = os.path.dirname(sys.executable) + ':' + env['PATH']
+
         for i in range(row_num_agents):
             for j in range(column_num_agents):
                 row_agent_name = row_agents[i][0]
@@ -156,6 +171,7 @@ class AcpcTournamentTest(unittest.TestCase):
                             column_agent_name,
                             column_agent_script_path],
                         cwd=ACPC_INFRASTRUCTURE_DIR,
+                        env=env,
                         stdout=subprocess.PIPE)
                     proc.stdout.readline().decode('utf-8').strip()
                     log_readings += [get_player_utilities_from_log_file(normal_order_logs_name + '.log')]
@@ -173,6 +189,7 @@ class AcpcTournamentTest(unittest.TestCase):
                             row_agent_name,
                             row_agent_script_path],
                         cwd=ACPC_INFRASTRUCTURE_DIR,
+                        env=env,
                         stdout=subprocess.PIPE)
                     proc.stdout.readline().decode('utf-8').strip()
                     log_readings += [get_player_utilities_from_log_file(reversed_order_logs_name + '.log')]

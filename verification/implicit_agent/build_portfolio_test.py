@@ -23,7 +23,6 @@ BASE_OPPONENT_SCRIPT_PATH = '%s/base_opponent_script.sh' % TEST_DIRECTORY
 
 REPLACE_STRING_COMMENT = '###COMMENT###'
 REPLACE_STRING_GAME_FILE_PATH = '###GAME_FILE_PATH###'
-REPLACE_STRING_ENVIRONMENT_ACTIVATION = '###ENVIRONMENT_ACTIVATION###'
 OPPONENT_SCRIPT_REPLACE_STRING_COMMENT_FILE_PATH = '###STRATEGY_FILE_PATH###'
 AGENT_SCRIPT_REPLACE_STRING_PORTFOLIO_STRATEGIES_PATHS = '###PORTFOLIO_STRATEGIES_PATHS###'
 AGENT_SCRIPT_REPLACE_STRING_UTILITY_ESTIMATION_TYPE = '###UTILITY_ESTIMATION_TYPE###'
@@ -129,7 +128,7 @@ class BuildPortfolioTest(unittest.TestCase):
             ],
         })
 
-    def test_leduc_final_build_portfolio(self):
+    def test_leduc_small_build_portfolio(self):
         tilt_probabilities = [-1, -0.8, -0.6, -0.4, 0.4, 0.6, 0.8, 1]
         opponents = []
         for action in Action:
@@ -139,10 +138,11 @@ class BuildPortfolioTest(unittest.TestCase):
         self.train_and_show_results({
             'game_file_path': 'games/leduc.limit.2p.game',
             'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
-            'portfolio_name': 'leduc_final_portfolio',
+            'portfolio_name': 'leduc_small_portfolio',
             'parallel': True,
             'opponent_tilt_types': opponents,
             'overwrite_portfolio_path': True,
+            'portfolio_cut_improvement_threshold': 0.1,
         })
 
     def test_leduc_big_build_portfolio(self):
@@ -155,11 +155,11 @@ class BuildPortfolioTest(unittest.TestCase):
         self.train_and_show_results({
             'game_file_path': 'games/leduc.limit.2p.game',
             'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
-            'portfolio_name': 'leduc_big_portfolio',
+            'portfolio_name': 'leduc_small_portfolio',
             'parallel': True,
             'opponent_tilt_types': opponents,
             'overwrite_portfolio_path': True,
-            'portfolio_cut_improvement_threshold': 0,
+            'portfolio_cut_improvement_threshold': 0.02,
         })
 
     def train_and_show_results(self, test_spec):
@@ -279,10 +279,6 @@ class BuildPortfolioTest(unittest.TestCase):
         for a in agent_specs:
             print(_get_agent_name(a))
 
-        anaconda_env_name = None
-        if 'anaconda3/envs' in sys.executable:
-            anaconda_env_name = sys.executable.split('/anaconda3/envs/')[1].split('/')[0]
-
         response_strategy_file_names = []
         for i, strategy in enumerate(portfolio_strategies):
             agent_name = agent_names[i]
@@ -319,11 +315,6 @@ class BuildPortfolioTest(unittest.TestCase):
                     WARNING_COMMENT,
                     game_file_path,
                     opponent_strategy_output_file_path.split('/')[-1]])
-            if anaconda_env_name:
-                _replace_in_file(
-                    opponent_script_path,
-                    [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
-                    ['source activate %s' % anaconda_env_name])
 
         for utility_estimation_method in UTILITY_ESTIMATION_METHODS:
             agent_name_method_name = '' if utility_estimation_method == UTILITY_ESTIMATION_METHODS[0] else '-%s' % utility_estimation_method
@@ -343,8 +334,3 @@ class BuildPortfolioTest(unittest.TestCase):
                     game_file_path,
                     '"%s"' % utility_estimation_method,
                     strategies_replacement])
-            if anaconda_env_name:
-                _replace_in_file(
-                    agent_script_path,
-                    [REPLACE_STRING_ENVIRONMENT_ACTIVATION],
-                    ['source activate %s' % anaconda_env_name])
