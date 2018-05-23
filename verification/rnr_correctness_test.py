@@ -64,6 +64,28 @@ class RnrCorrectnessTest(unittest.TestCase):
             # 'print_best_responses': True,
         })
 
+    def test_leduc_rnr(self):
+        self.train_and_show_results({
+            'title': 'Restricted Nash Response agent exploitability',
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'base_strategy_path': LEDUC_EQUILIBRIUM_STRATEGY_PATH,
+            'opponent_tilt_types': [
+                # (Action.CALL, TiltType.ADD, 0.8, 1),
+                # (Action.CALL, TiltType.ADD, 0.8, 0.5),
+                # (Action.CALL, TiltType.ADD, 0.8, 0),
+
+                (Action.FOLD, TiltType.MULTIPLY, -0.8, 1),
+                (Action.FOLD, TiltType.MULTIPLY, -0.8, 0.5),
+                (Action.FOLD, TiltType.MULTIPLY, -0.8, 0),
+            ],
+            'training_iterations': 1500,
+            'checkpoint_iterations': 10,
+            'overwrite_figure': True,
+            # 'print_response_strategies': True,
+            # 'print_opponent_strategies': True,
+            # 'print_best_responses': True,
+        })
+
     def train_and_show_results(self, test_spec):
         game_file_path = test_spec['game_file_path']
         game = acpc.read_game_file(game_file_path)

@@ -59,7 +59,7 @@ class CfrCorrectnessTests(unittest.TestCase):
         leduc_test_spec = {
             'title': 'Leduc Hold\'em Poker CFR trained strategy exploitability',
             'game_file_path': 'games/leduc.limit.2p.game',
-            'training_iterations': 1000,
+            'training_iterations': 1500,
             'weight_delay': 700,
             'checkpoint_iterations': 10
         }
