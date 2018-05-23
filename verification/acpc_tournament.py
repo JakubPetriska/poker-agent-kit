@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from tabulate import tabulate
 import copy
+import random
 
 import acpc_python_client as acpc
 
@@ -143,6 +144,9 @@ class AcpcTournamentTest(unittest.TestCase):
             int(confidence * 100),
             int(max_confidence_interval_half_size * 1000)))
 
+        if not os.path.exists(logs_base_dir):
+            os.makedirs(logs_base_dir)
+
         row_agents = test_spec['row_agents']
         row_num_agents = len(row_agents)
         row_agent_scripts_paths = [workspace_dir + '/' + agent[2] for agent in row_agents]
@@ -152,6 +156,19 @@ class AcpcTournamentTest(unittest.TestCase):
         column_agent_scripts_paths = [workspace_dir + '/' + agent[2] for agent in column_agents]
 
         seeds = []
+
+        seeds_file_path = '%s/%s/seeds.log' % (workspace_dir, FILES_PATH)
+        if not os.path.exists(seeds_file_path):
+            max_seed = (2**30) - 1
+            for _ in range(5000):
+                seeds += [random.randint(1, max_seed)]
+            with open(seeds_file_path, 'w') as file:
+                for seed in seeds:
+                    file.write(str(seed) + '\n')
+        else:
+            with open(seeds_file_path, 'r') as seeds_file:
+                for seed in seeds_file:
+                    seeds += [int(float(seed))]
 
         scores_table = [[None for j in range(column_num_agents)] for i in range(row_num_agents)]
 
