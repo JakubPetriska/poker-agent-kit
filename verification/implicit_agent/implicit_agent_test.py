@@ -50,7 +50,7 @@ class ImplicitAgentTest(unittest.TestCase):
             'game_file_path': 'games/kuhn.limit.2p.game',
             'utility_estimator_class': AivatUtilityEstimator,
             'utility_estimator_args': {
-                'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+                'equilibirum_strategy_path': 'strategies/kuhn.limit.2p-equilibrium.strategy'
             }
         })
 
@@ -66,6 +66,16 @@ class ImplicitAgentTest(unittest.TestCase):
             'portfolio_name': 'leduc_simple_portfolio',
             'game_file_path': 'games/leduc.limit.2p.game',
             'utility_estimator_class': ImaginaryObservationsUtilityEstimator,
+        })
+
+    def test_leduc_small_portfolio_aivat(self):
+        self.evaluate_agent({
+            'portfolio_name': 'leduc_small_portfolio',
+            'game_file_path': 'games/leduc.limit.2p.game',
+            'utility_estimator_class': AivatUtilityEstimator,
+            'utility_estimator_args': {
+                'equilibirum_strategy_path': 'strategies/leduc.limit.2p-equilibrium.strategy'
+            }
         })
 
     def evaluate_agent(self, test_spec):
@@ -96,6 +106,9 @@ class ImplicitAgentTest(unittest.TestCase):
 
         big_blind_size = get_big_blind_size(game)
 
+        env = os.environ.copy()
+        env['PATH'] = os.path.dirname(sys.executable) + ':' + env['PATH']
+
         print()
         for i in range(portfolio_size):
             opponent_name = opponent_names[i]
@@ -109,6 +122,7 @@ class ImplicitAgentTest(unittest.TestCase):
                     opponent_name,
                     opponent_script_paths[i],
                     portfolio_name],
+                env=env,
                 stdout=subprocess.PIPE)
             port_number = proc.stdout.readline().decode('utf-8').strip()
 

@@ -24,7 +24,7 @@ class AivatUtilityEstimator():
                 '"equilibirum_strategy_path" argument not provided')
 
         equilibirum_strategy_path = args['equilibirum_strategy_path']
-        equilibirum_strategy, _ = read_strategy_from_file(game, equilibirum_strategy_path)
+        self.equilibirum_strategy, _ = read_strategy_from_file(game, equilibirum_strategy_path)
         utilities_dict = {}
 
         def callback(nodes, utilities):
@@ -35,7 +35,7 @@ class AivatUtilityEstimator():
                 utilities_dict[key] = utilities
 
         PlayerUtility(game).get_player_utilities(
-            [equilibirum_strategy] * 2,
+            [self.equilibirum_strategy] * 2,
             [],
             [],
             [False] * 2,
@@ -67,12 +67,15 @@ class AivatUtilityEstimator():
             possible_player_hole_cards = list(filter(
                 lambda hole_cards: is_unique(hole_cards, all_board_cards),
                 sampling_strategy.children))
+            opponent_nodes = [
+                list(map(lambda c: self.equilibirum_strategy.children[c], filter(lambda c: is_unique(hole_cards, c, all_board_cards), self.equilibirum_strategy.children)))
+                for hole_cards in possible_player_hole_cards]
         else:
             opponent_hole_cards = [state.get_hole_card(opponent_player, c) for c in range(self.game.get_num_hole_cards())]
             possible_player_hole_cards = list(filter(
                 lambda hole_cards: is_unique(hole_cards, opponent_hole_cards, all_board_cards),
                 sampling_strategy.children))
-            opponent_node = sampling_strategy.children[tuple(sorted(opponent_hole_cards))]
+            opponent_nodes = [[self.equilibirum_strategy.children[tuple(sorted(opponent_hole_cards))]] for _ in range(len(possible_player_hole_cards))]
         nodes = [
             [
                 expert_node.children[hole_cards]
@@ -83,6 +86,7 @@ class AivatUtilityEstimator():
         num_nodes = len(possible_player_hole_cards)
         evaluated_strategies_reach_probabilities = np.ones([num_evaluated_strategies, num_nodes])
         sampling_strategy_reach_probabilities = np.ones(num_nodes)
+        opponent_nodes_reach_probabilities = np.ones([len(opponent_nodes), len(opponent_nodes[0])])
 
         # Calculate correction term for hole cards
         if all_info_available:
@@ -153,72 +157,91 @@ class AivatUtilityEstimator():
                 new_board_cards = get_board_cards(self.game, state, round_index)
 
                 # Calculate correction term for board cards
-                if all_info_available:
-                    num_board_cards = len(opponent_node.children)
+                # if all_info_available:
 
+                # TODO NOtok
+                num_board_cards = len(opponent_nodes[0][0].children)
+
+                histories_actions_utilities = {}
+                for i in range(num_nodes):
+                    history_actions_utilities = {}
+                    histories_actions_utilities[i] = history_actions_utilities
+                    for a in filter(lambda a: a in opponent_nodes[i][0].children if len(opponent_nodes[i]) == 1 else True, sampling_strategy_nodes[i].children):
+                        opponent_nodes_utilities = np.zeros(len(opponent_nodes[i]))
+                        for j, opponent_node in enumerate(opponent_nodes[i]):
+                            if a in opponent_node.children:
+                                nodes_tmp = [None, None]
+                                nodes_tmp[player] = sampling_strategy_nodes[i].children[a]
+                                nodes_tmp[opponent_player] = opponent_node.children[a]
+                                key = ';'.join(map(lambda m: str(m), nodes_tmp))
+                                opponent_nodes_utilities[j] = self.utilities_dict[key][player]
+                        if np.sum(opponent_nodes_reach_probabilities[i]) != 0:
+                            opponent_reach_ratios = opponent_nodes_reach_probabilities[i] / np.sum(opponent_nodes_reach_probabilities[i])
+                        else:
+                            opponent_reach_ratios = 1 / np.ones(len(opponent_nodes_reach_probabilities[i]))
+                        history_actions_utilities[a] = np.sum(opponent_nodes_utilities * opponent_reach_ratios)
+
+                history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                importance_sampling_ratio = np.sum(evaluated_strategies_reach_probabilities, axis=1) / history_sampling_strategy_reach_probabilities_sum
+
+                current_history_expected_value = 0
+                for i in range(num_nodes):
+                    # for a in filter(lambda a: a in sampling_strategy_nodes[i].children, opponent_node.children):
+                    for a in filter(lambda a: a in opponent_nodes[i][0].children if len(opponent_nodes[i]) == 1 else True, sampling_strategy_nodes[i].children):
+                        current_history_expected_value += histories_actions_utilities[i][a] \
+                            * sampling_strategy_reach_probabilities[i] / num_board_cards
+
+                for i in range(num_nodes):
+                    sampling_strategy_reach_probabilities[i] /= num_board_cards
+                    for j in range(num_evaluated_strategies):
+                        evaluated_strategies_reach_probabilities[j, i] /= num_board_cards
+
+                next_history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                next_history_expected_value = 0
+                for i in range(num_nodes):
+                    next_history_expected_value += histories_actions_utilities[i][new_board_cards] \
+                        * sampling_strategy_reach_probabilities[i]
+                utilities += \
+                    ((current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
+                    - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)) * importance_sampling_ratio
+
+
+                nodes = [[expert_node.children[new_board_cards] for expert_node in expert_nodes] for expert_nodes in nodes]
+                sampling_strategy_nodes = [node.children[new_board_cards] for node in sampling_strategy_nodes]
+                # if all_info_available:
+                #     opponent_node = opponent_node.children[new_board_cards]
+                opponent_nodes = [[opponent_nodes[i][j].children[new_board_cards] for j in range(len(opponent_nodes[i]))] for i in range(num_nodes)]
+            elif isinstance(node, ActionNode):
+                action = convert_action_to_int(state.get_action_type(round_index, action_index))
+                if node.player == player:
+                    # Calculate correction term for player actions
+                    # if all_info_available:
                     histories_actions_utilities = {}
                     for i in range(num_nodes):
                         history_actions_utilities = {}
                         histories_actions_utilities[i] = history_actions_utilities
-                        for a in filter(lambda a: a in sampling_strategy_nodes[i].children, opponent_node.children):
-                            nodes_tmp = [None, None]
-                            nodes_tmp[player] = sampling_strategy_nodes[i].children[a]
-                            nodes_tmp[opponent_player] = opponent_node.children[a]
-                            key = ';'.join(map(lambda m: str(m), nodes_tmp))
-                            history_actions_utilities[a] = self.utilities_dict[key][player]
+                        for a in filter(lambda a: a in opponent_nodes[i][0].children if len(opponent_nodes[i]) == 1 else True, sampling_strategy_nodes[i].children):
+                            opponent_nodes_utilities = np.zeros(len(opponent_nodes[i]))
+                            for j, opponent_node in enumerate(opponent_nodes[i]):
+                                nodes_tmp = [None, None]
+                                nodes_tmp[player] = sampling_strategy_nodes[i].children[a]
+                                nodes_tmp[opponent_player] = opponent_node.children[a]
+                                key = ';'.join(map(lambda m: str(m), nodes_tmp))
+                                opponent_nodes_utilities[j] = self.utilities_dict[key][player]
+                            if np.sum(opponent_nodes_reach_probabilities[i]) != 0:
+                                opponent_reach_ratios = opponent_nodes_reach_probabilities[i] / np.sum(opponent_nodes_reach_probabilities[i])
+                            else:
+                                opponent_reach_ratios = 1 / np.ones(len(opponent_nodes_reach_probabilities[i]))
+                            history_actions_utilities[a] = np.sum(opponent_nodes_utilities * opponent_reach_ratios)
 
                     history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
                     importance_sampling_ratio = np.sum(evaluated_strategies_reach_probabilities, axis=1) / history_sampling_strategy_reach_probabilities_sum
 
                     current_history_expected_value = 0
                     for i in range(num_nodes):
-                        for a in filter(lambda a: a in sampling_strategy_nodes[i].children, opponent_node.children):
+                        for a in sampling_strategy_nodes[i].children:
                             current_history_expected_value += histories_actions_utilities[i][a] \
-                                * sampling_strategy_reach_probabilities[i] / num_board_cards
-
-                    for i in range(num_nodes):
-                        sampling_strategy_reach_probabilities[i] /= num_board_cards
-                        for j in range(num_evaluated_strategies):
-                            evaluated_strategies_reach_probabilities[j, i] /= num_board_cards
-
-                    next_history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
-                    next_history_expected_value = 0
-                    for i in range(num_nodes):
-                        next_history_expected_value += histories_actions_utilities[i][new_board_cards] \
-                            * sampling_strategy_reach_probabilities[i]
-                    utilities += \
-                        ((current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
-                        - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)) * importance_sampling_ratio
-
-
-                nodes = [[expert_node.children[new_board_cards] for expert_node in expert_nodes] for expert_nodes in nodes]
-                sampling_strategy_nodes = [node.children[new_board_cards] for node in sampling_strategy_nodes]
-                if all_info_available:
-                    opponent_node = opponent_node.children[new_board_cards]
-            elif isinstance(node, ActionNode):
-                action = convert_action_to_int(state.get_action_type(round_index, action_index))
-                if node.player == player:
-                    # Calculate correction term for player actions
-                    if all_info_available:
-                        histories_actions_utilities = {}
-                        for i in range(num_nodes):
-                            history_actions_utilities = {}
-                            histories_actions_utilities[i] = history_actions_utilities
-                            for a in node.children:
-                                nodes_tmp = [None, None]
-                                nodes_tmp[player] = sampling_strategy_nodes[i].children[a]
-                                nodes_tmp[opponent_player] = opponent_node.children[a]
-                                key = ';'.join(map(lambda m: str(m), nodes_tmp))
-                                history_actions_utilities[a] = self.utilities_dict[key][player]
-
-                        history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
-                        importance_sampling_ratio = np.sum(evaluated_strategies_reach_probabilities, axis=1) / history_sampling_strategy_reach_probabilities_sum
-
-                        current_history_expected_value = 0
-                        for i in range(num_nodes):
-                            for a in sampling_strategy_nodes[i].children:
-                                current_history_expected_value += histories_actions_utilities[i][a] \
-                                    * sampling_strategy_reach_probabilities[i] * sampling_strategy_nodes[i].strategy[a]
+                                * sampling_strategy_reach_probabilities[i] * sampling_strategy_nodes[i].strategy[a]
 
                     update_reach_proabilities(
                         action,
@@ -227,15 +250,22 @@ class AivatUtilityEstimator():
                         sampling_strategy_reach_probabilities,
                         evaluated_strategies_reach_probabilities)
 
-                    if all_info_available:
-                        next_history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
-                        next_history_expected_value = 0
-                        for i in range(num_nodes):
-                            next_history_expected_value += histories_actions_utilities[i][action] \
-                                * sampling_strategy_reach_probabilities[i]
+                    # if all_info_available:
+                    next_history_sampling_strategy_reach_probabilities_sum = np.sum(sampling_strategy_reach_probabilities)
+                    next_history_expected_value = 0
+                    for i in range(num_nodes):
+                        next_history_expected_value += histories_actions_utilities[i][action] \
+                            * sampling_strategy_reach_probabilities[i]
+                    try:
                         utilities += \
                             ((current_history_expected_value / history_sampling_strategy_reach_probabilities_sum) \
                             - (next_history_expected_value / next_history_sampling_strategy_reach_probabilities_sum)) * importance_sampling_ratio
+                    except:
+                        print()
+                else:
+                    for i in range(num_nodes):
+                        for j in range(len(opponent_nodes[0])):
+                            opponent_nodes_reach_probabilities[i, j] *= opponent_nodes[i][j].strategy[action]
 
                 action_index += 1
                 if action_index == state.get_num_actions(round_index):
@@ -243,8 +273,7 @@ class AivatUtilityEstimator():
                     action_index = 0
                 nodes = [[expert_node.children[action] for expert_node in expert_nodes] for expert_nodes in nodes]
                 sampling_strategy_nodes = [node.children[action] for node in sampling_strategy_nodes]
-                if all_info_available:
-                    opponent_node = opponent_node.children[action]
+                opponent_nodes = [[opponent_nodes[i][j].children[action] for j in range(len(opponent_nodes[i]))] for i in range(num_nodes)]
             elif isinstance(node, TerminalNode):
                 players_folded = [state.get_player_folded(p) for p in range(num_players)]
                 add_terminals_to_utilities(node.pot_commitment, players_folded, sampling_strategy_reach_probabilities, evaluated_strategies_reach_probabilities)
