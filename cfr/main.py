@@ -38,7 +38,7 @@ class CfrNodeProvider(NodeProvider):
 
 
 class Cfr:
-    """Creates new ACPC poker using CFR+ algorithm which runs for specified number of iterations.
+    """Creates new ACPC Poker game strategy using CFR+ algorithm which runs for specified number of iterations.
 
     !!! Currently only limit betting games with up to 5 cards total and 2 players are supported !!!
     """

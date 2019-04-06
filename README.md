@@ -1,7 +1,7 @@
 # poker-agent-kit
 
 Collection of game-theoretic algorithms for Poker. Implemented algorithms include:
-* CFR (Counterfactual Regret Minimization)
+* CFR+ (Counterfactual Regret Minimization)
 * DBR (Data Biased Response)
 * RNR (Restricted Nash Response)
 * AIVAT and Imaginary Observations for utility estimation
@@ -12,7 +12,7 @@ This library was implemented to test and improve the implicit modeling agent whi
 
 ## Usage
 Various top level directories contain implementations of the above mentioned algorithms. All algorithms are used either in scripts located with the implementation or in some of the experiments and tests in `verification` directory.
-* `cfr` - The CFR algorithm
+* `cfr` - The CFR+ algorithm
 * `evaluation` - Evaluation of trained strategies
 * `implicit_modeling` - Implicit modeling framework introduced in [Bard et al., 2013]
 * `response` - Calculation of response strategy to another (DBR, RNR)
